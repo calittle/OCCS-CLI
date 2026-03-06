@@ -32,16 +32,24 @@ Use brew to install prerequisites.
 git clone https://github.com/calittle/OCCS-CLI.git
 cd occs-cli
 npm install
+npm link
 ```
+
 
 ## Usage
 
-`occs-cli [options] [command] [parameters] `
 OCCS CLI 0.1.0
 
 Usage: occs [options] [command] [parameters]
 
-Oracle CCS CLI utility
+### Quick Start
+```
+occs login
+occs get-everthing
+occs report-catalog
+occs report-xref
+occs graph
+```
 
 ### Options
 1. `-V, --version`             output the version number
