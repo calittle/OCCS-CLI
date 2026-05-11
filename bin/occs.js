@@ -48,9 +48,10 @@ program
 
 program
   .command('preview')
-  .description('Render a communication package preview from input JSON')
-  .requiredOption('-i, --input <file>', 'Input JSON file path')
+  .description('Render a communication package preview from input JSON or XML')
+  .requiredOption('-i, --input <file>', 'Input JSON/XML file path')
   .requiredOption('-p, --package-name <name>', 'Communication package short name')
+  .option('--env-file <path>', 'Path to .env file for credential defaults')
   .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD), defaults to today')
   .option('-r, --render-type <type>', 'Render type: PDF, HTML, CSV, JSON, METADATA', 'PDF')
   .option('-o, --output <path>', 'Output file path (or directory)')
@@ -83,10 +84,12 @@ program
 program
   .command('login')
   .description('Log in to Oracle CCS and store session')
+  .option('--env-file <path>', 'Path to .env file for login defaults')
   .option('-u, --username <username>', 'Username')
   .option('-p, --password <password>', 'Password')
   .option('-c, --customer <customer>', 'Customer short name')
   .option('-r, --region <region>', 'Oracle region')
+  .option('--environment <environment>', 'Oracle environment (alias for region)')
   .option('-t, --tenancy <tenancy>', 'Tenancy path')
   .action(loginCommand);
 

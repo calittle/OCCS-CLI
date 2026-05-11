@@ -82,6 +82,32 @@ Log in to Oracle CCS and store the session.
 
 You can also run `occs login` with no flags and enter required values interactively.
 
+`login` can read defaults from a local `.env` file and skip prompts for values found there:
+* `OCCS_USERNAME`
+* `OCCS_CUSTOMER` (customer short name)
+* `OCCS_ENVIRONMENT` (region/environment)
+* `OCCS_TENANCY`
+* `OCCS_PASSWORD` (plain text)
+* `OCCS_PASSWORD_ENC` (encrypted password)
+* `OCCS_PASSWORD_KEY` (decryption key for `OCCS_PASSWORD_ENC`)
+
+`--environment` is also supported as an alias for `--region`.
+`--env-file` is supported to explicitly set which env file to use.
+
+Env file lookup order for `occs login`:
+* `--env-file <path>` (if provided)
+* `OCCS_ENV_FILE` (if set)
+* `~/.occs.env`
+* `~/.occs-cli/.env`
+* `./.env` (current working directory)
+
+Later files override earlier ones; shell environment variables override all file values.
+
+For encrypted password values, use format `v1:<ivBase64>:<tagBase64>:<ciphertextBase64>`.
+Generate one with Node:
+
+`node -e "const crypto=require('crypto');const pwd=process.argv[1];const key=process.argv[2];const iv=crypto.randomBytes(12);const k=crypto.scryptSync(key,'occs-cli-password-salt',32);const c=crypto.createCipheriv('aes-256-gcm',k,iv);const enc=Buffer.concat([c.update(pwd,'utf8'),c.final()]);const tag=c.getAuthTag();console.log('v1:'+iv.toString('base64')+':'+tag.toString('base64')+':'+enc.toString('base64'));\" \"YOUR_PASSWORD\" \"YOUR_KEY\"`
+
 Unsure what to use? Look at the URL used to access CCS:
 `https://[customer].[region].oraclecloud.com/[tenancy]/ui/Configuration/index.html`
 
@@ -104,14 +130,23 @@ Artifacts are written to the `preflight` subdirectory of the output directory, i
 
 #### preview
 
-Render a package preview by submitting input JSON to the CCS assembly API.
+Render a package preview by submitting input JSON or XML to CCS.
 
 `occs preview --input ./data/input.json --package-name MY_PACKAGE`
+
+If the input is XML (`.xml` or file starts with `<`), `preview` will:
+* Minify XML by removing inter-tag whitespace
+* Call `CommunicationFileTransfer/v1/XmlToJsonConverter`
+* Re-login (converter invalidates token)
+* Submit converted JSON to `CommunicationAssembly/v1/CommunicationAssemblyRec`
+
+For XML preview, credentials must be resolvable from env/flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
 
 Optional parameters:
 * `-e, --effective-date <date>`: Effective date in `YYYY-MM-DD` format. Defaults to today.
 * `-r, --render-type <type>`: One of `PDF`, `HTML`, `CSV`, `JSON`, `METADATA`. Defaults to `PDF`.
 * `-o, --output <path>`: Output file path (or directory). Defaults to the input filename with extension based on render type.
+* `--env-file <path>`: Optional env file path for credential defaults.
 
 #### list-[objectType]
 
