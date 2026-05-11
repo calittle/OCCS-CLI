@@ -12,6 +12,8 @@ import { crossrefCommand } from '../lib/crossRef.js';
 import { graphCommand } from '../lib/graph.js';
 import { listCompaniesCommand } from '../lib/companies.js';
 import { listConfigsCommand } from '../lib/configs.js';
+import { preflightCommand } from '../lib/preflight.js';
+import { previewCommand } from '../lib/preview.js';
 
 const program = new Command();
 function showBanner() {
@@ -35,6 +37,25 @@ program
   .description('Generate list of open configuration IDs')
   .option('-o, --output <dir>', 'Path to output folder')  
   .action(listConfigsCommand);
+
+program
+  .command('preflight')
+  .description('Scan open ConfigIDs for in-flight records')
+  .option('-c, --config-id <id>', 'Only scan a single ConfigID from the open configuration list')
+  .option('-o, --output <dir>', 'Path to output folder', './output/preflight')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(preflightCommand);
+
+program
+  .command('preview')
+  .description('Render a communication package preview from input JSON')
+  .requiredOption('-i, --input <file>', 'Input JSON file path')
+  .requiredOption('-p, --package-name <name>', 'Communication package short name')
+  .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD), defaults to today')
+  .option('-r, --render-type <type>', 'Render type: PDF, HTML, CSV, JSON, METADATA', 'PDF')
+  .option('-o, --output <path>', 'Output file path (or directory)')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(previewCommand);
 
 
   program
@@ -62,11 +83,11 @@ program
 program
   .command('login')
   .description('Log in to Oracle CCS and store session')
-  .requiredOption('-u, --username <username>', 'Username')
-  .requiredOption('-p, --password <password>', 'Password')
-  .requiredOption('-c, --customer <customer>', 'Customer short name')
-  .requiredOption('-r, --region <region>', 'Oracle region')
-  .requiredOption('-t, --tenancy <tenancy>', 'Tenancy path')
+  .option('-u, --username <username>', 'Username')
+  .option('-p, --password <password>', 'Password')
+  .option('-c, --customer <customer>', 'Customer short name')
+  .option('-r, --region <region>', 'Oracle region')
+  .option('-t, --tenancy <tenancy>', 'Tenancy path')
   .action(loginCommand);
 
 

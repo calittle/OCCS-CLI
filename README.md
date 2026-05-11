@@ -60,6 +60,8 @@ occs graph
 1. `report-xref [options]`     Generate cross reference of all CCS components
 1. `graph [options]`           Generate a .DOT file for GraphViz
 1. `login [options]`           Log in to Oracle CCS and store session
+1. `preview [options]`         Render a package preview file from input JSON
+1. `preflight [options]`       Scan open ConfigIDs for in-flight records
 1. `get-everything [options]`  Get everything from Oracle CCS
 1. `list-packages [options]`   List communication packages from Oracle CCS
 1. `list-fonts [options]`      List fonts from Oracle CCS
@@ -78,6 +80,8 @@ Log in to Oracle CCS and store the session.
 
 `occs-cli login -u USERNAME -p PASSWORD --customer CUSTOMER --region REGION --tenancy TENANCY`
 
+You can also run `occs login` with no flags and enter required values interactively.
+
 Unsure what to use? Look at the URL used to access CCS:
 `https://[customer].[region].oraclecloud.com/[tenancy]/ui/Configuration/index.html`
 
@@ -85,6 +89,29 @@ Unsure what to use? Look at the URL used to access CCS:
 Downloads all CCS data including packages, documents, layouts, contents, styles, and fonts.
 
 `occs-cli get-everything`
+
+#### preflight
+
+Scans open ConfigIDs and flags which ones have in-flight records based on the same configuration-detail flow used in `LoginApp_Package`.
+
+`occs-cli preflight`
+
+To scan only one ConfigID:
+
+`occs-cli preflight --config-id <CONFIG_ID>`
+
+Artifacts are written to the `preflight` subdirectory of the output directory, including a `summary.json` plus one JSON file per scanned ConfigID.
+
+#### preview
+
+Render a package preview by submitting input JSON to the CCS assembly API.
+
+`occs preview --input ./data/input.json --package-name MY_PACKAGE`
+
+Optional parameters:
+* `-e, --effective-date <date>`: Effective date in `YYYY-MM-DD` format. Defaults to today.
+* `-r, --render-type <type>`: One of `PDF`, `HTML`, `CSV`, `JSON`, `METADATA`. Defaults to `PDF`.
+* `-o, --output <path>`: Output file path (or directory). Defaults to the input filename with extension based on render type.
 
 #### list-[objectType]
 
