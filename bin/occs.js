@@ -14,17 +14,18 @@ import { listCompaniesCommand } from '../lib/companies.js';
 import { listConfigsCommand } from '../lib/configs.js';
 import { preflightCommand } from '../lib/preflight.js';
 import { previewCommand } from '../lib/preview.js';
+import { conditionCheckCommand } from '../lib/conditionCheck.js';
 
 const program = new Command();
 function showBanner() {
   console.log('');
-  console.log('OCCS CLI 0.1.0');
+  console.log('OCCS CLI 1.0.0 🚀');
   console.log('');
 }
 program
   .name('occs')
   .description('Oracle CCS CLI utility')
-  .version('0.1.0');
+  .version('1.0.0');
 
 program
   .command('list-companies')
@@ -42,6 +43,8 @@ program
   .command('preflight')
   .description('Scan open ConfigIDs for in-flight records')
   .option('-c, --config-id <id>', 'Only scan a single ConfigID from the open configuration list')
+  .option('--list-attached', 'List attached package/document/content items for each scanned ConfigID')
+  .option('--show-blockers', 'Show package->document blocker chains, including owner config details when available')
   .option('-o, --output <dir>', 'Path to output folder', './output/preflight')
   .option('-v, --verbose', 'Verbose logging')
   .action(preflightCommand);
@@ -52,11 +55,25 @@ program
   .requiredOption('-i, --input <file>', 'Input JSON/XML file path')
   .requiredOption('-p, --package-name <name>', 'Communication package short name')
   .option('--env-file <path>', 'Path to .env file for credential defaults')
+  .option('--extract <expr>', 'For XML batches, extract a single record by expression (e.g. billId==002051606115)')
+  .option('--reroot <newRoot>', 'For XML input, reroot payload to this XML element, e.g. billPrint')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for preview/converter calls (default 30000)')
   .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD), defaults to today')
-  .option('-r, --render-type <type>', 'Render type: PDF, HTML, CSV, JSON, METADATA', 'PDF')
+  .option('-r, --render-type <type...>', 'Render type(s): PDF, HTML, CSV, JSON, METADATA (supports comma or space separated values)', ['PDF'])
   .option('-o, --output <path>', 'Output file path (or directory)')
+  .option('--ding', 'Play terminal bell after successful preview output')
   .option('-v, --verbose', 'Verbose logging')
   .action(previewCommand);
+
+program
+  .command('condition-check')
+  .description('Evaluate Assembly Template document conditions against input JSON')
+  .requiredOption('--at <file>', 'Assembly Template JSON file path')
+  .requiredOption('--input <file>', 'Input JSON file path')
+  .option('--format <format>', 'Output format: pretty, md, json', 'pretty')
+  .option('--show-check-summary', 'Include high-level check summary table in pretty output')
+  .option('--near-miss-threshold <value>', 'Near-miss minimum pass ratio (default 65%; accepts 0-1 or percent like 0.6 or 60)')
+  .action(conditionCheckCommand);
 
 
   program

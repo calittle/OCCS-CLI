@@ -13,7 +13,8 @@
     "commander": "^11.1.0",
     "graphviz-cli": "^2.0.0",
     "jsdom": "^27.0.0",
-    "json2csv": "^6.0.0-alpha.2"
+    "json2csv": "^6.0.0-alpha.2",
+    "jsonpath-plus": "^10.2.0"
   },
   "directories": {
     "lib": "lib"

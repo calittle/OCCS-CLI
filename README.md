@@ -61,6 +61,7 @@ occs graph
 1. `graph [options]`           Generate a .DOT file for GraphViz
 1. `login [options]`           Log in to Oracle CCS and store session
 1. `preview [options]`         Render a package preview file from input JSON
+1. `condition-check [options]` Evaluate Assembly Template document conditions against input JSON
 1. `preflight [options]`       Scan open ConfigIDs for in-flight records
 1. `get-everything [options]`  Get everything from Oracle CCS
 1. `list-packages [options]`   List communication packages from Oracle CCS
@@ -144,9 +145,39 @@ For XML preview, credentials must be resolvable from env/flags (`OCCS_USERNAME` 
 
 Optional parameters:
 * `-e, --effective-date <date>`: Effective date in `YYYY-MM-DD` format. Defaults to today.
-* `-r, --render-type <type>`: One of `PDF`, `HTML`, `CSV`, `JSON`, `METADATA`. Defaults to `PDF`.
-* `-o, --output <path>`: Output file path (or directory). Defaults to the input filename with extension based on render type.
+* `-r, --render-type <type...>`: One or more render types (`PDF`, `HTML`, `CSV`, `JSON`, `METADATA`). Supports comma-separated (`-r PDF,HTML`) or space-separated (`-r PDF HTML`) values. Defaults to `PDF`.
+* `--timeout <ms>`: Request timeout override for preview/XML-converter calls. Default is `30000`.
+* `-o, --output <path>`: Output file path (or directory). Defaults to the current working directory using the input filename stem plus extension based on render type.
+* `--ding`: Emit a single terminal bell when preview output is written successfully. Errors emit a double bell by default.
 * `--env-file <path>`: Optional env file path for credential defaults.
+* `--extract <expr>`: For batch XML input, extract a single record by expression, e.g. `billId==002051606115`.
+* `--reroot <newRoot>`: For XML input, reroot payload to the specified XML element before conversion (example: `--reroot billPrint`).
+
+Preview writes two artifacts when the API returns JSON wrapper output:
+* Rendered output file (for example `.pdf`) decoded from `CommunicationAssemblyInfo.AssemblyRenderOutput`
+* Response wrapper JSON sidecar: `<output-name>.response.json`
+
+For XML input, preview also writes the converted JSON used as `AssemblyData`:
+* Generated input JSON sidecar: `<output-name>.generated-input.json`
+
+#### condition-check
+
+Deterministically evaluate `Documents[*].Condition` in an Assembly Template JSON against an input JSON payload.
+
+`occs condition-check --at ./AssemblyTemplate.json --input ./sample-input.json`
+
+Optional:
+* `--format pretty|md|json` (default `pretty`)
+* `--show-check-summary` to include the high-level check summary table in `pretty` output
+* `--near-miss-threshold <value>` to tune near-miss fuzziness (default `65`, accepts 0-1 or percent, e.g. `0.6` or `60`)
+
+Output includes:
+* Triggered `Documents[*].$$Id`
+* Triggered `Layouts[*].Contents[*]` items that have `Condition` (within triggered documents)
+* Passing condition fragments for triggered docs
+* Near-miss evidence (partially satisfied candidates) in `pretty` format
+* Full non-triggered conditioned content evidence (no near-miss threshold applied for content)
+* Closest-match analysis with failed checks when no docs trigger
 
 #### list-[objectType]
 
