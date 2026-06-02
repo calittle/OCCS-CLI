@@ -15,8 +15,17 @@ import { listConfigsCommand } from '../lib/configs.js';
 import { preflightCommand } from '../lib/preflight.js';
 import { previewCommand } from '../lib/preview.js';
 import { conditionCheckCommand } from '../lib/conditionCheck.js';
+import { templateCompareCommand } from '../lib/templateCompare.js';
+import { consumeRuntimeCompletionContext, startRuntimeCounter, stopRuntimeCounter } from '../lib/runtimeCounter.js';
+import { sessionsCommand, useSessionCommand } from '../lib/sessionCommands.js';
 
 const program = new Command();
+
+function ringBell(count = 1) {
+  const safeCount = Math.max(1, Math.floor(Number(count) || 1));
+  process.stdout.write('\x07'.repeat(safeCount));
+}
+
 function showBanner() {
   console.log('');
   console.log('OCCS CLI 1.0.0 🚀');
@@ -25,7 +34,31 @@ function showBanner() {
 program
   .name('occs')
   .description('Oracle CCS CLI utility')
-  .version('1.0.0');
+  .version('1.0.0')
+  .option('--ding', 'Play terminal bell after successful command execution');
+
+program.hook('preAction', (_thisCommand, actionCommand) => {
+  const commandName = actionCommand?.name?.() || 'command';
+  startRuntimeCounter(`Running ${commandName}...`);
+});
+
+program.hook('postAction', (_thisCommand, actionCommand) => {
+  const elapsedSeconds = stopRuntimeCounter();
+  if (elapsedSeconds) {
+    const commandName = actionCommand?.name?.() || 'command';
+    const context = consumeRuntimeCompletionContext();
+    const contextSuffix = context ? ` (${context})` : '';
+    console.log(`Completed ${commandName}${contextSuffix} in ${elapsedSeconds}s`);
+  }
+  const opts = actionCommand.optsWithGlobals();
+  if (opts?.ding) {
+    ringBell(1);
+  }
+});
+
+process.on('exit', () => {
+  stopRuntimeCounter();
+});
 
 program
   .command('list-companies')
@@ -52,28 +85,57 @@ program
 program
   .command('preview')
   .description('Render a communication package preview from input JSON or XML')
-  .requiredOption('-i, --input <file>', 'Input JSON/XML file path')
-  .requiredOption('-p, --package-name <name>', 'Communication package short name')
+  .requiredOption('-i, --input <path>', 'Input JSON/XML file path, or folder of JSON files')
+  .requiredOption('-p, --package <name>', 'Communication package short name')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
   .option('--env-file <path>', 'Path to .env file for credential defaults')
-  .option('--extract <expr>', 'For XML batches, extract a single record by expression (e.g. billId==002051606115)')
-  .option('--reroot <newRoot>', 'For XML input, reroot payload to this XML element, e.g. billPrint')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for preview/converter calls (default 30000)')
+  .option('--extract <expr>', 'For XML batches, extract a single record by expression (e.g. billId=002051606115)')
+  .option('--reroot <newRoot>', 'For XML input, reroot converted JSON to this element before preview (defaults to billPrint)')
+  .option('--disable-reroot', 'For XML input, disable converted JSON rerooting (overrides the default billPrint reroot)')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for preview/converter calls (default 60000)')
   .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD), defaults to today')
+  .option('-d, --debug [nameAndValue...]', 'Inject debug key/value into JSON input. Defaults: name=DEBUGCOMMS value=1')
   .option('-r, --render-type <type...>', 'Render type(s): PDF, HTML, CSV, JSON, METADATA (supports comma or space separated values)', ['PDF'])
   .option('-o, --output <path>', 'Output file path (or directory)')
-  .option('--ding', 'Play terminal bell after successful preview output')
   .option('-v, --verbose', 'Verbose logging')
   .action(previewCommand);
 
 program
+  .command('sessions')
+  .description('List saved OCCS sessions')
+  .action(sessionsCommand);
+
+program
+  .command('use')
+  .description('Set the default OCCS session')
+  .option('--session <name>', 'Saved session alias or key to make current')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
+  .action(useSessionCommand);
+
+program
   .command('condition-check')
   .description('Evaluate Assembly Template document conditions against input JSON')
-  .requiredOption('--at <file>', 'Assembly Template JSON file path')
-  .requiredOption('--input <file>', 'Input JSON file path')
+  .requiredOption('-p, --package <file>', 'Assembly Template JSON file path')
+  .requiredOption('-i, --input <file>', 'Input JSON file path')
   .option('--format <format>', 'Output format: pretty, md, json', 'pretty')
   .option('--show-check-summary', 'Include high-level check summary table in pretty output')
   .option('--near-miss-threshold <value>', 'Near-miss minimum pass ratio (default 65%; accepts 0-1 or percent like 0.6 or 60)')
   .action(conditionCheckCommand);
+
+program
+  .command('template-compare')
+  .description('Compare two Assembly Template JSON files semantically (documents/layouts/contents/iterations/fields)')
+  .requiredOption('--a <file>', 'Assembly Template JSON file path A')
+  .requiredOption('--b <file>', 'Assembly Template JSON file path B')
+  .option('--format <format>', 'Output format: pretty, md, json', 'pretty')
+  .action(templateCompareCommand);
 
 
   program
@@ -95,6 +157,7 @@ program
   .option('-d, --document <documentName>', 'Document to graph' )
   .option('-s,--styles', 'Include Styles in graph - WARNING: may produce a busy graph.')
   .option('-f,--fields', 'Include Fields in graph - WARNING: may produce a busy graph.')
+  .option('--all-versions', 'Include all versions (default shows latest version per resource)')
   .action(graphCommand);
 
 
@@ -108,6 +171,7 @@ program
   .option('-r, --region <region>', 'Oracle region')
   .option('--environment <environment>', 'Oracle environment (alias for region)')
   .option('-t, --tenancy <tenancy>', 'Tenancy path')
+  .option('--session <name>', 'Saved session alias for this login')
   .action(loginCommand);
 
 
@@ -170,4 +234,8 @@ program
   .action(listContentsCommand);
 
 showBanner();
+program.allowUnknownOption(true);
+for (const command of program.commands) {
+  command.allowUnknownOption(true);
+}
 program.parse();
