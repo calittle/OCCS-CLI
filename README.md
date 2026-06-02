@@ -54,14 +54,18 @@ occs graph
 ### Options
 1. `-V, --version`             output the version number
 1. `-h, --help`                display help for command
+1. `--ding`                    play terminal bell after successful command execution
 
 ### Commands
 1. `report-catalog [options]`  Generate flat catalog of all CCS components
 1. `report-xref [options]`     Generate cross reference of all CCS components
 1. `graph [options]`           Generate a .DOT file for GraphViz
 1. `login [options]`           Log in to Oracle CCS and store session
-1. `preview [options]`         Render a package preview file from input JSON
+1. `sessions`                  List saved OCCS sessions
+1. `use [options]`             Set the default OCCS session
+1. `preview [options]`         Render a package preview file from input JSON/XML
 1. `condition-check [options]` Evaluate Assembly Template document conditions against input JSON
+1. `template-compare [options]` Compare two Assembly Template JSON files semantically
 1. `preflight [options]`       Scan open ConfigIDs for in-flight records
 1. `get-everything [options]`  Get everything from Oracle CCS
 1. `list-packages [options]`   List communication packages from Oracle CCS
@@ -82,6 +86,7 @@ Log in to Oracle CCS and store the session.
 `occs-cli login -u USERNAME -p PASSWORD --customer CUSTOMER --region REGION --tenancy TENANCY`
 
 You can also run `occs login` with no flags and enter required values interactively.
+Each successful login saves a session keyed by `customer.region/tenancy` and makes it current. Use `--session <name>` to add an alias.
 
 `login` can read defaults from a local `.env` file and skip prompts for values found there:
 * `OCCS_USERNAME`
@@ -112,6 +117,23 @@ Generate one with Node:
 Unsure what to use? Look at the URL used to access CCS:
 `https://[customer].[region].oraclecloud.com/[tenancy]/ui/Configuration/index.html`
 
+#### sessions
+
+List saved OCCS sessions and show which one is current.
+
+`occs sessions`
+
+#### use
+
+Set the default/current session without logging in again.
+
+Examples:
+* `occs use --session pp`
+* `occs use --tenancy pre-prod`
+* `occs use --customer clpenlight --environment sin-fscloud --tenancy non-prod`
+
+The current session is used by commands when no explicit `--session` or target selector is provided.
+
 #### get-everything
 Downloads all CCS data including packages, documents, layouts, contents, styles, and fonts.
 
@@ -133,29 +155,49 @@ Artifacts are written to the `preflight` subdirectory of the output directory, i
 
 Render a package preview by submitting input JSON or XML to CCS.
 
-`occs preview --input ./data/input.json --package-name MY_PACKAGE`
+`occs preview --input ./data/input.json --package MY_PACKAGE`
+
+If `--input` points to a folder, `preview` recursively finds all `.json` files and renders each one.
 
 If the input is XML (`.xml` or file starts with `<`), `preview` will:
-* Minify XML by removing inter-tag whitespace
+* Normalize selected XML transaction payload whitespace for converter submission
+* Auto-detect multi-transaction batches (multiple `<C1-BillPrintRecord>` or `<billPrint>` elements), preview each transaction, and suffix output filenames by `billId` when available
 * Call `CommunicationFileTransfer/v1/XmlToJsonConverter`
+* Reroot the converted JSON to `billPrint` by default before preview submission
 * Re-login (converter invalidates token)
 * Submit converted JSON to `CommunicationAssembly/v1/CommunicationAssemblyRec`
 
 For XML preview, credentials must be resolvable from env/flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
 
 Optional parameters:
+* `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
+* `--customer <customer>`, `--region <region>`/`--environment <environment>`, `--tenancy <tenancy>`: Select a saved session by target. Omitted target parts default from the current session.
 * `-e, --effective-date <date>`: Effective date in `YYYY-MM-DD` format. Defaults to today.
 * `-r, --render-type <type...>`: One or more render types (`PDF`, `HTML`, `CSV`, `JSON`, `METADATA`). Supports comma-separated (`-r PDF,HTML`) or space-separated (`-r PDF HTML`) values. Defaults to `PDF`.
-* `--timeout <ms>`: Request timeout override for preview/XML-converter calls. Default is `30000`.
-* `-o, --output <path>`: Output file path (or directory). Defaults to the current working directory using the input filename stem plus extension based on render type.
-* `--ding`: Emit a single terminal bell when preview output is written successfully. Errors emit a double bell by default.
+* `--timeout <ms>`: Request timeout override for preview/XML-converter calls. Default is `60000`.
+* `-d, --debug [name] [value]`: Inject a debug key/value into the input JSON (or converted XML JSON) before preview submission. Defaults to `DEBUGCOMMS=1` when `-d` is provided without values. Supports dot notation for nested keys (example: `--debug root.flags.DEBUGCOMMS 1`).
+* `-o, --output <path>`: Output file path (or directory). Defaults to the current working directory using the input filename stem plus extension based on render type. When `--input` is a folder, `--output` must be a directory path and output filenames mirror the input folder structure.
 * `--env-file <path>`: Optional env file path for credential defaults.
-* `--extract <expr>`: For batch XML input, extract a single record by expression, e.g. `billId==002051606115`.
-* `--reroot <newRoot>`: For XML input, reroot payload to the specified XML element before conversion (example: `--reroot billPrint`).
+* `--extract <expr>`: For batch XML input, extract a single record by expression (supports `field=value` or `field==value`), e.g. `billId=002051606115`.
+* `--reroot <newRoot>`: For XML input, reroot converted JSON to the specified element before preview submission. Defaults to `billPrint`.
+* `--disable-reroot`: For XML input, disable converted JSON rerooting entirely (overrides the default `billPrint` reroot).
 
-Preview writes two artifacts when the API returns JSON wrapper output:
-* Rendered output file (for example `.pdf`) decoded from `CommunicationAssemblyInfo.AssemblyRenderOutput`
+Examples:
+* `occs login -c clpenlight -r sin-fscloud -t non-prod --session non-prod`
+* `occs login -c clpenlight -r sin-fscloud -t pre-prod --session pre-prod`
+* `occs preview -i ./data/input.xml -p MY_PACKAGE --session pre-prod`
+* `occs preview -i ./data/input.xml -p MY_PACKAGE --tenancy non-prod`
+* `occs preview -i ./data/input.json -p MY_PACKAGE -d` -> injects `DEBUGCOMMS: 1`
+* `occs preview -i ./data/input.json -p MY_PACKAGE -d DEBUGCOMMS 0`
+* `occs preview -i ./data/input.json -p MY_PACKAGE -d root.flags.DEBUG "on"`
+
+Preview writes the rendered output file (for example `.pdf`) decoded from `CommunicationAssemblyInfo.AssemblyRenderOutput`.
+When `-v/--verbose` is enabled and the API returns JSON wrapper output, preview also writes:
 * Response wrapper JSON sidecar: `<output-name>.response.json`
+
+If a preview request fails and Oracle returns an error body, preview writes an error sidecar:
+* JSON errors: `<output-name>.response.error.<status>.json`
+* Non-JSON errors: `<output-name>.response.error.<status>.txt`
 
 For XML input, preview also writes the converted JSON used as `AssemblyData`:
 * Generated input JSON sidecar: `<output-name>.generated-input.json`
@@ -164,7 +206,9 @@ For XML input, preview also writes the converted JSON used as `AssemblyData`:
 
 Deterministically evaluate `Documents[*].Condition` in an Assembly Template JSON against an input JSON payload.
 
-`occs condition-check --at ./AssemblyTemplate.json --input ./sample-input.json`
+`occs condition-check --package ./AssemblyTemplate.json --input ./sample-input.json`
+
+`--package/-p` also accepts a bare name and resolves it as `./<name>.json` (for example `-p AssemblyTemplate` -> `./AssemblyTemplate.json`).
 
 Optional:
 * `--format pretty|md|json` (default `pretty`)
@@ -178,6 +222,27 @@ Output includes:
 * Near-miss evidence (partially satisfied candidates) in `pretty` format
 * Full non-triggered conditioned content evidence (no near-miss threshold applied for content)
 * Closest-match analysis with failed checks when no docs trigger
+
+#### template-compare
+
+Compare two Assembly Template JSON files using CCS-aware structure (not just line-by-line text diff).
+
+`occs template-compare --a ./AssemblyTemplate_A.json --b ./AssemblyTemplate_B.json`
+
+Optional:
+* `--format pretty|md|json` (default `pretty`)
+
+Output includes:
+* Document IDs in A but not in B, and vice versa
+* Document `Condition` changes
+* Document metadata changes when present (for example `Updated`, `Desc`, `Comments`, custom keys)
+* Layout additions/removals per document (including nested layout paths)
+* Content additions/removals and `Condition` changes per layout
+* Iteration changes for content blocks (`Iteration.$$Id`, `Type`, `Path`, and iterator field mapping diffs)
+* Top-level `Fields` changes:
+  * Field names in A but not in B, and vice versa
+  * Mapping changes (`Path`, `Mandatory`, `Desc`) for shared field names
+  * Field metadata changes when present (for example `Updated`, `Description`, `XPath`, custom keys)
 
 #### list-[objectType]
 
@@ -218,6 +283,7 @@ Issue the command without the `-d,--document` option to generate graphs for all 
 Options can be combined.
 * `-s,--styles`: Include styles (Note this may clutter the graph), e.g. `occs-cli graph -d CO-G1-CO1 -s`
 * `-f,--fields`: Include fields (Note this may clutter the graph), e.g. `occs-cli graph -d CO-G1-CO1 -f`
+* `--all-versions`: Include all resource versions in graph output (default is latest version per resource)
 
 
 # File Structure
