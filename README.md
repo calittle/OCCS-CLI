@@ -164,7 +164,7 @@ example_bills-16.0/
 
 `package save` requires `--config-id`, resolves it to the internal open ConfigId, and uses it only on save requests. The command does not create package versions and does not expose ConfigId list/create operations.
 
-When a bundle has changes, `package save` follows the observed OCCS save flow: it saves the version master payload and uploads the Assembly Template blob. `--dry-run --json` reports which bundle files changed without uploading either request.
+When a bundle has changes, `package save` follows the observed OCCS save flow: it saves the version master payload and uploads the Assembly Template blob only for changed surfaces. `--dry-run --json` reports which bundle files changed without uploading either request.
 
 When `--json` is passed, stdout contains only one JSON object. Progress and verbose logs are written to stderr, and failures return a non-zero exit code with an `{ "ok": false, "error": ... }` JSON payload.
 
