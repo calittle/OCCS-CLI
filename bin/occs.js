@@ -179,6 +179,7 @@ program
   .command('list-configs')
   .description('Generate list of open configuration IDs')
   .option('-o, --output <dir>', 'Path to output folder')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for config list calls (default 10000)')
   .option('--json', 'Write machine-readable JSON to stdout')
   .action(listConfigsCommand);
 
@@ -335,6 +336,7 @@ packageCommand
   .command('list [name]')
   .description('List communication packages')
   .option('--name <name>', 'Package short-name search text')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for package API calls (default 10000)')
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(packageListCommand);
@@ -345,6 +347,7 @@ packageCommand
   .option('--package-version <version>', 'Package version short name, or latest')
   .option('-o, --output <dir>', 'Output bundle directory')
   .option('--force', 'Overwrite bundle files in an existing output directory')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for package API calls (default 10000)')
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(packageGetCommand);
@@ -354,6 +357,7 @@ packageCommand
   .description('Save a package maintenance bundle to an open ConfigId')
   .requiredOption('--config-id <nameOrId>', 'Open ConfigId name, short name, or internal id')
   .option('--dry-run', 'Report changes without uploading')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for package API calls (default 30000)')
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(packageSaveCommand);

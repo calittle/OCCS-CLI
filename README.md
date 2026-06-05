@@ -89,6 +89,7 @@ Log in to Oracle CCS and store the session.
 
 You can also run `occs login` with no flags and enter required values interactively.
 Each successful login saves a session keyed by `customer.region/tenancy` and makes it current. Use `--session <name>` to add an alias.
+Login credentials are saved encrypted for commands that must refresh Oracle tokens, such as XML conversion and XML preview. The session file stores only encrypted password material; the local encryption key is created at `~/.occs-cli/credential-key`.
 
 `login` can read defaults from a local `.env` file and skip prompts for values found there:
 * `OCCS_USERNAME`
@@ -111,10 +112,8 @@ Env file lookup order for `occs login`:
 
 Later files override earlier ones; shell environment variables override all file values.
 
-For encrypted password values, use format `v1:<ivBase64>:<tagBase64>:<ciphertextBase64>`.
-Generate one with Node:
-
-`node -e "const crypto=require('crypto');const pwd=process.argv[1];const key=process.argv[2];const iv=crypto.randomBytes(12);const k=crypto.scryptSync(key,'occs-cli-password-salt',32);const c=crypto.createCipheriv('aes-256-gcm',k,iv);const enc=Buffer.concat([c.update(pwd,'utf8'),c.final()]);const tag=c.getAuthTag();console.log('v1:'+iv.toString('base64')+':'+tag.toString('base64')+':'+enc.toString('base64'));\" \"YOUR_PASSWORD\" \"YOUR_KEY\"`
+If `login` reads `OCCS_PASSWORD` or `CCS_PASSWORD` from an env file, a successful login automatically replaces that plaintext entry with `OCCS_PASSWORD_ENC`/`OCCS_PASSWORD_KEY` or `CCS_PASSWORD_ENC`/`CCS_PASSWORD_KEY`.
+Encrypted env password values use format `v1:<ivBase64>:<tagBase64>:<ciphertextBase64>`.
 
 Unsure what to use? Look at the URL used to access CCS:
 `https://[customer].[region].oraclecloud.com/[tenancy]/ui/Configuration/index.html`
@@ -191,7 +190,7 @@ If `--input` points to a folder, `convertxml` recursively finds all `.xml` files
 
 For XML batches with multiple `<C1-BillPrintRecord>` or `<billPrint>` elements, `convertxml` converts each transaction and suffixes output filenames by `billId` when available.
 
-By default, converted JSON is rerooted to `billPrint`, matching XML preview behavior. Credentials must be resolvable from env/flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
+By default, converted JSON is rerooted to `billPrint`, matching XML preview behavior. Credentials must be available from encrypted saved login credentials, env, or flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
 
 Optional parameters:
 * `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
@@ -225,7 +224,7 @@ If the input is XML (`.xml` or file starts with `<`), `preview` will:
 * Re-login (converter invalidates token)
 * Submit converted JSON to `CommunicationAssembly/v1/CommunicationAssemblyRec`
 
-For XML preview, credentials must be resolvable from env/flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
+For XML preview, credentials must be available from encrypted saved login credentials, env, or flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
 
 Optional parameters:
 * `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
