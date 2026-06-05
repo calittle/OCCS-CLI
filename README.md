@@ -230,7 +230,7 @@ Optional parameters:
 * `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
 * `--customer <customer>`, `--region <region>`/`--environment <environment>`, `--tenancy <tenancy>`: Select a saved session by target. Omitted target parts default from the current session.
 * `-e, --effective-date <date>`: Effective date in `YYYY-MM-DD` format. Defaults to today.
-* `-r, --render-type <type...>`: One or more render types (`PDF`, `HTML`, `CSV`, `JSON`, `METADATA`). Supports comma-separated (`-r PDF,HTML`) or space-separated (`-r PDF HTML`) values. Defaults to `PDF`.
+* `-r, --render-type <type...>`: One or more render types (`PDF`, `HTML`, `TEXT`, `CSV`, `JSON`, `METADATA`). Supports comma-separated (`-r PDF,HTML`) or space-separated (`-r PDF HTML`) values. Defaults to `PDF`.
 * `--timeout <ms>`: Request timeout override for preview/XML-converter calls. Default is `60000`.
 * `-d, --debug [name] [value]`: Inject a debug key/value into the input JSON (or converted XML JSON) before preview submission. Defaults to `DEBUGCOMMS=1` when `-d` is provided without values. Supports dot notation for nested keys (example: `--debug root.flags.DEBUGCOMMS 1`).
 * `-o, --output <path>`: Output file path (or directory). Defaults to the current working directory using the input filename stem plus extension based on render type. When `--input` is a folder, `--output` must be a directory path and output filenames mirror the input folder structure.

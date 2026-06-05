@@ -210,7 +210,7 @@ program
   .option('--timeout <ms>', 'Request timeout in milliseconds for preview/converter calls (default 60000)')
   .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD), defaults to today')
   .option('-d, --debug [nameAndValue...]', 'Inject debug key/value into JSON input. Defaults: name=DEBUGCOMMS value=1')
-  .option('-r, --render-type <type...>', 'Render type(s): PDF, HTML, CSV, JSON, METADATA (supports comma or space separated values)', ['PDF'])
+  .option('-r, --render-type <type...>', 'Render type(s): PDF, HTML, TEXT, CSV, JSON, METADATA (supports comma or space separated values)', ['PDF'])
   .option('-o, --output <path>', 'Output file path (or directory)')
   .option('-v, --verbose', 'Verbose logging')
   .action(previewCommand);
