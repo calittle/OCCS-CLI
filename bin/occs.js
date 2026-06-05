@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { spawn, spawnSync } from 'child_process';
 import loginCommand from '../lib/auth.js';
 import { listDocumentsCommand } from '../lib/documents.js';
 import { listPackagesCommand } from '../lib/packages.js';
@@ -7,13 +8,14 @@ import { listLayoutsCommand } from '../lib/layouts.js';
 import { listContentsCommand } from '../lib/contents.js';
 import { listStylesCommand } from '../lib/styles.js';
 import { listFontsCommand } from '../lib/fonts.js';
+import { packageGetCommand, packageListCommand, packageSaveCommand } from '../lib/packageMaintenance.js';
 import { catalogCommand } from '../lib/catalog.js';
 import { crossrefCommand } from '../lib/crossRef.js';
 import { graphCommand } from '../lib/graph.js';
 import { listCompaniesCommand } from '../lib/companies.js';
 import { listConfigsCommand } from '../lib/configs.js';
 import { preflightCommand } from '../lib/preflight.js';
-import { previewCommand } from '../lib/preview.js';
+import { convertXmlCommand, previewCommand } from '../lib/preview.js';
 import { conditionCheckCommand } from '../lib/conditionCheck.js';
 import { templateCompareCommand } from '../lib/templateCompare.js';
 import { consumeRuntimeCompletionContext, startRuntimeCounter, stopRuntimeCounter } from '../lib/runtimeCounter.js';
@@ -21,9 +23,95 @@ import { sessionsCommand, useSessionCommand } from '../lib/sessionCommands.js';
 
 const program = new Command();
 
-function ringBell(count = 1) {
-  const safeCount = Math.max(1, Math.floor(Number(count) || 1));
-  process.stdout.write('\x07'.repeat(safeCount));
+function spawnDetached(command, args) {
+  try {
+    const child = spawn(command, args, {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    child.on('error', () => {});
+    child.unref();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function runCommand(command, args) {
+  const result = spawnSync(command, args, {
+    encoding: 'utf8',
+    stdio: 'ignore',
+    windowsHide: true,
+  });
+  return !result.error && result.status === 0;
+}
+
+function escapeAppleScriptString(value) {
+  return String(value ?? '').replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+}
+
+function toPowerShellString(value) {
+  return `'${String(value ?? '').replaceAll("'", "''")}'`;
+}
+
+function buildCompletionNotificationBody(commandName, elapsedSeconds, context) {
+  const contextSuffix = context ? ` (${context})` : '';
+  const elapsedSuffix = elapsedSeconds ? ` in ${elapsedSeconds}s` : '';
+  return `${commandName} completed${contextSuffix}${elapsedSuffix}`;
+}
+
+function playCompletionSound() {
+  if (process.platform === 'darwin') {
+    return runCommand('afplay', ['/System/Library/Sounds/Glass.aiff']);
+  }
+
+  if (process.platform === 'win32') {
+    return runCommand('powershell.exe', [
+      '-NoProfile',
+      '-WindowStyle',
+      'Hidden',
+      '-Command',
+      '[System.Media.SystemSounds]::Asterisk.Play()',
+    ]);
+  }
+
+  return runCommand('canberra-gtk-play', ['-i', 'complete'])
+    || runCommand('paplay', ['/usr/share/sounds/freedesktop/stereo/complete.oga']);
+}
+
+function showCompletionNotification(commandName, elapsedSeconds, context) {
+  const title = 'OCCS CLI';
+  const body = buildCompletionNotificationBody(commandName, elapsedSeconds, context);
+
+  if (process.platform === 'darwin') {
+    const script = `display notification "${escapeAppleScriptString(body)}" with title "${escapeAppleScriptString(title)}" sound name "Glass"`;
+    const notified = runCommand('osascript', ['-e', script]);
+    const sounded = playCompletionSound();
+    return notified || sounded;
+  }
+
+  if (process.platform === 'win32') {
+    const script = [
+      `Add-Type -AssemblyName System.Windows.Forms`,
+      `Add-Type -AssemblyName System.Drawing`,
+      `$notification = New-Object System.Windows.Forms.NotifyIcon`,
+      `$notification.Icon = [System.Drawing.SystemIcons]::Information`,
+      `$notification.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info`,
+      `$notification.BalloonTipTitle = ${toPowerShellString(title)}`,
+      `$notification.BalloonTipText = ${toPowerShellString(body)}`,
+      `$notification.Visible = $true`,
+      `$notification.ShowBalloonTip(5000)`,
+      `Start-Sleep -Milliseconds 5500`,
+      `$notification.Dispose()`,
+    ].join('; ');
+    const sounded = playCompletionSound();
+    return spawnDetached('powershell.exe', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', script]) || sounded;
+  }
+
+  const notified = runCommand('notify-send', [title, body]);
+  const sounded = playCompletionSound();
+  return notified || sounded;
 }
 
 function showBanner() {
@@ -31,28 +119,49 @@ function showBanner() {
   console.log('OCCS CLI 1.0.0 🚀');
   console.log('');
 }
+
+function collectCsvOption(value, previous = []) {
+  return [
+    ...previous,
+    ...String(value || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean),
+  ];
+}
+
 program
   .name('occs')
   .description('Oracle CCS CLI utility')
   .version('1.0.0')
-  .option('--ding', 'Play terminal bell after successful command execution');
+  .option('--notify', 'Show a desktop notification and play a sound after successful command execution');
 
 program.hook('preAction', (_thisCommand, actionCommand) => {
+  const opts = actionCommand?.optsWithGlobals?.() || {};
+  if (opts.json) {
+    return;
+  }
   const commandName = actionCommand?.name?.() || 'command';
   startRuntimeCounter(`Running ${commandName}...`);
 });
 
 program.hook('postAction', (_thisCommand, actionCommand) => {
   const elapsedSeconds = stopRuntimeCounter();
+  const commandName = actionCommand?.name?.() || 'command';
+  const context = consumeRuntimeCompletionContext();
+  const opts = actionCommand.optsWithGlobals();
+  if (opts?.json) {
+    return;
+  }
   if (elapsedSeconds) {
-    const commandName = actionCommand?.name?.() || 'command';
-    const context = consumeRuntimeCompletionContext();
     const contextSuffix = context ? ` (${context})` : '';
     console.log(`Completed ${commandName}${contextSuffix} in ${elapsedSeconds}s`);
   }
-  const opts = actionCommand.optsWithGlobals();
-  if (opts?.ding) {
-    ringBell(1);
+  if (opts?.notify) {
+    const didNotify = showCompletionNotification(commandName, elapsedSeconds, context);
+    if (!didNotify) {
+      console.warn('Notification requested, but no supported desktop notifier or sound command was available.');
+    }
   }
 });
 
@@ -69,7 +178,8 @@ program
 program
   .command('list-configs')
   .description('Generate list of open configuration IDs')
-  .option('-o, --output <dir>', 'Path to output folder')  
+  .option('-o, --output <dir>', 'Path to output folder')
+  .option('--json', 'Write machine-readable JSON to stdout')
   .action(listConfigsCommand);
 
 program
@@ -105,6 +215,25 @@ program
   .action(previewCommand);
 
 program
+  .command('convertxml')
+  .description('Convert XML input to JSON using Oracle CCS')
+  .requiredOption('-i, --input <path>', 'Input XML file path, or folder of XML files')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
+  .option('--env-file <path>', 'Path to .env file for credential defaults')
+  .option('--extract <expr>', 'For XML batches, extract a single record by expression from each XML file (e.g. billId=002051606115)')
+  .option('--reroot <newRoot>', 'Reroot converted JSON to this element (defaults to billPrint)')
+  .option('--disable-reroot', 'Disable converted JSON rerooting (overrides the default billPrint reroot)')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for XML-converter calls (default 60000)')
+  .option('-d, --debug [nameAndValue...]', 'Inject debug key/value into converted JSON. Defaults: name=DEBUGCOMMS value=1')
+  .option('-o, --output <path>', 'Output JSON file path, or output directory when input is a folder')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(convertXmlCommand);
+
+program
   .command('sessions')
   .description('List saved OCCS sessions')
   .action(sessionsCommand);
@@ -124,8 +253,11 @@ program
   .description('Evaluate Assembly Template document conditions against input JSON')
   .requiredOption('-p, --package <file>', 'Assembly Template JSON file path')
   .requiredOption('-i, --input <file>', 'Input JSON file path')
+  .option('--expect-doc <id>', 'Expected document $$Id/description; repeat or comma-separate values', collectCsvOption, [])
+  .option('--expect-docs <ids>', 'Expected document $$Ids/descriptions; comma-separate values', collectCsvOption, [])
   .option('--format <format>', 'Output format: pretty, md, json', 'pretty')
   .option('--show-check-summary', 'Include high-level check summary table in pretty output')
+  .option('--show-near-misses', 'Show general near misses even when --expect-doc is provided')
   .option('--near-miss-threshold <value>', 'Near-miss minimum pass ratio (default 65%; accepts 0-1 or percent like 0.6 or 60)')
   .action(conditionCheckCommand);
 
@@ -190,6 +322,42 @@ program
     console.log("(>'-')> ✨ Done!\n");
   });
 
+const packageCommand = program
+  .command('package')
+  .description('Maintain communication packages')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup');
+
+packageCommand
+  .command('list [name]')
+  .description('List communication packages')
+  .option('--name <name>', 'Package short-name search text')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(packageListCommand);
+
+packageCommand
+  .command('get <name> [version]')
+  .description('Download a package maintenance bundle')
+  .option('--package-version <version>', 'Package version short name, or latest')
+  .option('-o, --output <dir>', 'Output bundle directory')
+  .option('--force', 'Overwrite bundle files in an existing output directory')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(packageGetCommand);
+
+packageCommand
+  .command('save <bundleDir>')
+  .description('Save a package maintenance bundle to an open ConfigId')
+  .requiredOption('--config-id <nameOrId>', 'Open ConfigId name, short name, or internal id')
+  .option('--dry-run', 'Report changes without uploading')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(packageSaveCommand);
+
 program
   .command('list-packages')
   .description('List communication packages from Oracle CCS')
@@ -233,7 +401,9 @@ program
   .option('-v, --verbose', 'Verbose logging')
   .action(listContentsCommand);
 
-showBanner();
+if (!process.argv.includes('--json')) {
+  showBanner();
+}
 program.allowUnknownOption(true);
 for (const command of program.commands) {
   command.allowUnknownOption(true);

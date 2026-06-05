@@ -54,7 +54,7 @@ occs graph
 ### Options
 1. `-V, --version`             output the version number
 1. `-h, --help`                display help for command
-1. `--ding`                    play terminal bell after successful command execution
+1. `--notify`                  show a desktop notification and play a sound after successful command execution
 
 ### Commands
 1. `report-catalog [options]`  Generate flat catalog of all CCS components
@@ -64,10 +64,12 @@ occs graph
 1. `sessions`                  List saved OCCS sessions
 1. `use [options]`             Set the default OCCS session
 1. `preview [options]`         Render a package preview file from input JSON/XML
+1. `convertxml [options]`      Convert XML input files to JSON
 1. `condition-check [options]` Evaluate Assembly Template document conditions against input JSON
 1. `template-compare [options]` Compare two Assembly Template JSON files semantically
 1. `preflight [options]`       Scan open ConfigIDs for in-flight records
 1. `get-everything [options]`  Get everything from Oracle CCS
+1. `package <command>`         List, get, and save package maintenance bundles
 1. `list-packages [options]`   List communication packages from Oracle CCS
 1. `list-fonts [options]`      List fonts from Oracle CCS
 1. `list-styles [options]`     List communication styles from Oracle CCS
@@ -139,6 +141,34 @@ Downloads all CCS data including packages, documents, layouts, contents, styles,
 
 `occs-cli get-everything`
 
+#### package
+
+Maintain communication packages with a small ATool-friendly command surface.
+
+Examples:
+* `occs package list example_bills --json`
+* `occs package get example_bills --package-version 16.0 --output ./work/example_bills-16.0 --json`
+* `occs package get example_bills 16.0 --output ./work/example_bills-16.0 --json`
+* `occs package save ./work/example_bills-16.0 --config-id 2026-06-05-1500 --json`
+* `occs package save ./work/example_bills-16.0 --config-id 2026-06-05-1500 --dry-run --json`
+
+`package get` writes a maintenance bundle:
+
+```
+example_bills-16.0/
+  occs-package.json
+  assembly-template.json
+  version-master.json
+```
+
+`assembly-template.json` contains the Assembly Template JSON blob. `version-master.json` contains the version master fields needed for package maintenance, including document ordering via `DocumentRelIndex`. `occs-package.json` is the manifest ATool should use to identify the package/version UUIDs, file paths, source hashes, and API endpoints.
+
+`package save` requires `--config-id`, resolves it to the internal open ConfigId, and uses it only on save requests. The command does not create package versions and does not expose ConfigId list/create operations.
+
+When a bundle has changes, `package save` follows the observed OCCS save flow: it saves the version master payload and uploads the Assembly Template blob. `--dry-run --json` reports which bundle files changed without uploading either request.
+
+When `--json` is passed, stdout contains only one JSON object. Progress and verbose logs are written to stderr, and failures return a non-zero exit code with an `{ "ok": false, "error": ... }` JSON payload.
+
 #### preflight
 
 Scans open ConfigIDs and flags which ones have in-flight records based on the same configuration-detail flow used in `LoginApp_Package`.
@@ -150,6 +180,34 @@ To scan only one ConfigID:
 `occs-cli preflight --config-id <CONFIG_ID>`
 
 Artifacts are written to the `preflight` subdirectory of the output directory, including a `summary.json` plus one JSON file per scanned ConfigID.
+
+#### convertxml
+
+Convert XML input to JSON through Oracle CCS without rendering a preview.
+
+`occs convertxml --input ./data/input.xml --output ./data/input.json`
+
+If `--input` points to a folder, `convertxml` recursively finds all `.xml` files and writes matching `.json` files under the output directory, preserving the input folder structure.
+
+For XML batches with multiple `<C1-BillPrintRecord>` or `<billPrint>` elements, `convertxml` converts each transaction and suffixes output filenames by `billId` when available.
+
+By default, converted JSON is rerooted to `billPrint`, matching XML preview behavior. Credentials must be resolvable from env/flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
+
+Optional parameters:
+* `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
+* `--customer <customer>`, `--region <region>`/`--environment <environment>`, `--tenancy <tenancy>`: Select a saved session by target. Omitted target parts default from the current session.
+* `--timeout <ms>`: Request timeout override for XML-converter calls. Default is `60000`.
+* `-d, --debug [name] [value]`: Inject a debug key/value into converted JSON. Defaults to `DEBUGCOMMS=1` when `-d` is provided without values.
+* `-o, --output <path>`: Output JSON file path for a single input file, or output directory for folder input. Folder input mirrors the input folder structure.
+* `--env-file <path>`: Optional env file path for credential defaults.
+* `--extract <expr>`: For batch XML input, extract a single record by expression from each XML file (supports `field=value` or `field==value`), e.g. `billId=002051606115`.
+* `--reroot <newRoot>`: Reroot converted JSON to the specified element. Defaults to `billPrint`.
+* `--disable-reroot`: Disable converted JSON rerooting entirely (overrides the default `billPrint` reroot).
+
+Examples:
+* `occs convertxml -i ./data/input.xml -o ./json/input.json --session pre-prod`
+* `occs convertxml -i ./xml-batch-dir -o ./json-output --tenancy non-prod`
+* `occs convertxml -i ./data/input.xml --disable-reroot`
 
 #### preview
 
@@ -212,11 +270,17 @@ Deterministically evaluate `Documents[*].Condition` in an Assembly Template JSON
 
 Optional:
 * `--format pretty|md|json` (default `pretty`)
+* `--expect-doc <id>` / `--expect-docs <ids>` to require/report expected document triggers. Repeat it or use comma-separated IDs.
 * `--show-check-summary` to include the high-level check summary table in `pretty` output
+* `--show-near-misses` to include general near misses when `--expect-doc` is provided
 * `--near-miss-threshold <value>` to tune near-miss fuzziness (default `65`, accepts 0-1 or percent, e.g. `0.6` or `60`)
+
+Example:
+* `occs condition-check -p ./example_bills.json -i ./66135.json --expect-doc CO-G1-CO23`
 
 Output includes:
 * Triggered `Documents[*].$$Id`
+* Expected document reports showing why requested docs did or did not trigger
 * Triggered `Layouts[*].Contents[*]` items that have `Condition` (within triggered documents)
 * Passing condition fragments for triggered docs
 * Near-miss evidence (partially satisfied candidates) in `pretty` format
