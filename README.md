@@ -264,6 +264,7 @@ Optional parameters:
 * `--extract <expr>`: For batch XML input, extract a single record by expression from each XML file (supports `field=value` or `field==value`), e.g. `billId=002051606115`.
 * `--reroot <newRoot>`: Reroot converted JSON to the specified element. Defaults to `billPrint`.
 * `--disable-reroot`: Disable converted JSON rerooting entirely (overrides the default `billPrint` reroot).
+* `--preserveNL`: Preserve newline characters in converted JSON string values. By default, `convertxml` strips `\n` from all string values after conversion.
 
 Examples:
 * `occs convertxml -i ./data/input.xml -o ./json/input.json --session pre-prod`

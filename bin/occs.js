@@ -228,6 +228,7 @@ program
   .option('--extract <expr>', 'For XML batches, extract a single record by expression from each XML file (e.g. billId=002051606115)')
   .option('--reroot <newRoot>', 'Reroot converted JSON to this element (defaults to billPrint)')
   .option('--disable-reroot', 'Disable converted JSON rerooting (overrides the default billPrint reroot)')
+  .option('--preserveNL', 'Preserve newline characters in converted JSON string values')
   .option('--timeout <ms>', 'Request timeout in milliseconds for XML-converter calls (default 60000)')
   .option('-d, --debug [nameAndValue...]', 'Inject debug key/value into converted JSON. Defaults: name=DEBUGCOMMS value=1')
   .option('-o, --output <path>', 'Output JSON file path, or output directory when input is a folder')
