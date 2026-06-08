@@ -25,6 +25,8 @@
     "lib": "lib"
   },
   "scripts": {
+    "build:artifact": "python3 tools/build_artifact.py --source head",
+    "build:artifact:worktree": "python3 tools/build_artifact.py --source worktree",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

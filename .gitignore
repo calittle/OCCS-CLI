@@ -7,6 +7,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-lock.yaml
 
+# Python helper tooling
+__pycache__/
+*.pyc
+
 # Logs
 logs
 *.log
@@ -24,6 +28,8 @@ coverage/
 # Build output
 dist/
 build/
+*.zip
+.occs-cli-build.local.json
 
 # Temporary files
 tmp/
