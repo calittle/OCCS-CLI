@@ -274,6 +274,8 @@ Optional:
 * `--show-near-misses` to include general near misses when `--expect-doc` is provided
 * `--near-miss-threshold <value>` to tune near-miss fuzziness (default `65`, accepts 0-1 or percent, e.g. `0.6` or `60`)
 
+Condition evaluation is Comms-compatible for filtered `empty true` checks: if a filtered collection parent is missing, for example `billChars[?(...)]`, the check fails unless the condition explicitly guards the collection with a null/empty branch or the input emits an empty array.
+
 Example:
 * `occs condition-check -p ./example_bills.json -i ./66135.json --expect-doc CO-G1-CO23`
 

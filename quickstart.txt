@@ -1,0 +1,65 @@
+OCCS CLI 1.1.0 Local Install Notes
+==================================
+This file is for installing Node.js/npm and the local OCCS CLI tarball:
+  occs-cli-1.1.0.tgz
+Node.js includes npm, so install Node.js first, then install the tarball with npm.
+macOS
+-----
+1. Install Node.js and npm.
+   Recommended with Homebrew:
+     brew install node
+   If Homebrew is not installed, download the macOS installer from:
+     https://nodejs.org/
+2. Open a new Terminal window and verify Node.js/npm.
+     node -v
+     npm -v
+3. Copy occs-cli-1.1.0.tgz to a local folder, such as Downloads.
+4. Install OCCS CLI globally.
+     cd ~/Downloads
+     npm install -g ./occs-cli-1.1.0.tgz
+5. Verify the OCCS command is available.
+     occs --version
+     occs --help
+Windows
+-------
+1. Install Node.js and npm.
+   Download and run the Windows LTS installer from:
+     https://nodejs.org/
+   Keep the default installer options, including adding Node.js to PATH.
+2. Open a new PowerShell window and verify Node.js/npm.
+     node -v
+     npm -v
+3. Copy occs-cli-1.1.0.tgz to a local folder, such as Downloads.
+4. Install OCCS CLI globally.
+     cd $env:USERPROFILE\Downloads
+     npm install -g .\occs-cli-1.1.0.tgz
+5. Verify the OCCS command is available.
+     occs --version
+     occs --help
+Updating or reinstalling
+------------------------
+If an older copy is already installed, uninstall it first:
+  npm uninstall -g occs-cli
+Then install the local tarball again:
+  npm install -g ./occs-cli-1.1.0.tgz
+On Windows, use:
+  npm install -g .\occs-cli-1.1.0.tgz
+Optional Graphviz install
+-------------------------
+Graphviz is only needed for OCCS CLI commands that generate graph output.
+macOS:
+  brew install graphviz
+Windows:
+  winget install Graphviz.Graphviz
+After installing Graphviz, open a new terminal and verify:
+  dot -V
+Troubleshooting
+---------------
+If "npm" is not recognized, Node.js is not installed correctly or the terminal was
+opened before installation finished. Close the terminal, open a new one, and try:
+  node -v
+  npm -v
+If "occs" is not recognized after installation, close and reopen the terminal.
+If it still fails, check the npm global install location:
+  npm config get prefix
+Make sure the matching npm global bin folder is on PATH.

@@ -1,11 +1,16 @@
 {
   "name": "occs-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.js",
   "type": "module",
   "bin": {
     "occs": "bin/occs.js"
   },
+  "files": [
+    "bin",
+    "lib",
+    "README.md"
+  ],
   "dependencies": {
     "@viz-js/viz": "^3.19.0",
     "axios": "^1.6.8",
@@ -23,7 +28,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "andy.little@oracle.com",
   "license": "ISC",
-  "description": ""
+  "description": "Oracle Communication Cloud Service CLI"
 }
