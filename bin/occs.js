@@ -15,6 +15,7 @@ import { graphCommand } from '../lib/graph.js';
 import { listCompaniesCommand } from '../lib/companies.js';
 import { listConfigsCommand } from '../lib/configs.js';
 import { preflightCommand } from '../lib/preflight.js';
+import { closeConfigCommand, createConfigCommand, migrateCommand } from '../lib/migration.js';
 import { convertXmlCommand, previewCommand } from '../lib/preview.js';
 import { conditionCheckCommand } from '../lib/conditionCheck.js';
 import { templateCompareCommand } from '../lib/templateCompare.js';
@@ -192,6 +193,63 @@ program
   .option('-o, --output <dir>', 'Path to output folder', './output/preflight')
   .option('-v, --verbose', 'Verbose logging')
   .action(preflightCommand);
+
+program
+  .command('close-config [configId]')
+  .description('Mark a ConfigId as Closed')
+  .option('--config-id <nameOrId>', 'ConfigId name, short name, internal id, or UUID')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
+  .option('--dry-run', 'Resolve and report the close request without sending it')
+  .option('--force', 'Submit the close request even if the current ConfigId status is not Open')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for close calls (default 30000)')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(closeConfigCommand);
+
+program
+  .command('create-config [shortName]')
+  .description('Create an open ConfigId')
+  .option('--short-name <shortName>', 'ConfigId short name; defaults to positional shortName')
+  .option('--name <name>', 'ConfigId long name; defaults to short name')
+  .option('--desc <description>', 'ConfigId description')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
+  .option('--dry-run', 'Build and report the create request without sending it')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for create calls (default 30000)')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(createConfigCommand);
+
+program
+  .command('migrate [configId]')
+  .description('Initiate ConfigId movement from a source environment to a target environment')
+  .option('--config-id <nameOrId>', 'Optional ConfigId to verify is present in the eligible movement list')
+  .option('--source-session <name>', 'Saved source session alias or key')
+  .option('--source-customer <customer>', 'Source customer short name for saved-session lookup')
+  .option('--source-region <region>', 'Source Oracle region for saved-session lookup')
+  .option('--source-environment <environment>', 'Source Oracle environment for saved-session lookup (alias for source region)')
+  .option('--source-tenancy <tenancy>', 'Source tenancy path for saved-session lookup')
+  .option('--source-token <token>', 'Source environment access token; accepts raw token or "Bearer ..."')
+  .option('--use-stored-source-token', 'Use the saved source session token instead of refreshing from stored credentials')
+  .option('--target-session <name>', 'Saved target session alias or key; defaults to the current session')
+  .option('--target-customer <customer>', 'Target customer short name for saved-session lookup')
+  .option('--target-region <region>', 'Target Oracle region for saved-session lookup')
+  .option('--target-environment <environment>', 'Target Oracle environment for saved-session lookup (alias for target region)')
+  .option('--target-tenancy <tenancy>', 'Target tenancy path for saved-session lookup')
+  .option('--dry-run', 'Fetch and validate the eligible movement list without initiating movement')
+  .option('--force', 'Initiate even if the target movement monitor reports a busy status')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for movement API calls (default 10000)')
+  .option('--token-timeout <ms>', 'Request timeout in milliseconds for source token refresh (default 20000)')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(migrateCommand);
 
 program
   .command('preview')

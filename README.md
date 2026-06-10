@@ -130,6 +130,9 @@ occs graph
 1. `condition-check [options]` Evaluate Assembly Template document conditions against input JSON
 1. `template-compare [options]` Compare two Assembly Template JSON files semantically
 1. `preflight [options]`       Scan open ConfigIDs for in-flight records
+1. `create-config [options] [shortName]` Create an open ConfigId
+1. `close-config [options] [configId]` Mark a ConfigId as Closed
+1. `migrate [options] [configId]` Initiate ConfigId movement between environments
 1. `get-everything [options]`  Get everything from Oracle CCS
 1. `package <command>`         List, get, and save package maintenance bundles
 1. `list-packages [options]`   List communication packages from Oracle CCS
@@ -241,6 +244,48 @@ To scan only one ConfigID:
 `occs-cli preflight --config-id <CONFIG_ID>`
 
 Artifacts are written to the `preflight` subdirectory of the output directory, including a `summary.json` plus one JSON file per scanned ConfigID.
+
+#### create-config
+
+Creates a new open ConfigId using the same `ConfigurationRec` flow as the Comms UI.
+
+`occs create-config 2026-06-10-1300 --session non-prod --desc "Config closing 10 JUN 2026 1pm EDT"`
+
+The positional value becomes `ConfigurationInfo.ShortName`. `--name` defaults to the same value, and `--desc` defaults to blank. The command prints the internal `ConfigurationId` returned by CCS; use that value with commands that save changes into a config.
+
+Use `--dry-run` to build the create payload without sending it:
+
+`occs create-config 2026-06-10-1300 --session non-prod --dry-run`
+
+In the Comms UI, choosing a newly created ConfigId as active causes later edit requests to send that internal ID as the `transactionconfigid` header. OCCS CLI commands that write into a config use explicit `--config-id` options for the same purpose.
+
+#### close-config
+
+Marks a source-environment ConfigId as Closed using the same `ConfigurationRec` flow as the Comms UI.
+
+`occs close-config build-01 --session non-prod`
+
+The ConfigId can be a ShortName, Name, internal `ConfigurationId`, or `ConfigurationUuid`. By default the command only closes ConfigIds currently in `Open` state; use `--force` to submit the close request for another non-`CloseInProgress` status.
+
+Use `--dry-run` to resolve the ConfigId without changing it:
+
+`occs close-config build-01 --session non-prod --dry-run`
+
+#### migrate
+
+Initiates ConfigId movement from a source environment to a target environment. The command refreshes a source access token from saved source credentials when available, asks the target environment for the eligible movement list, and then calls the target movement endpoint.
+
+`occs migrate --source-session non-prod --target-tenancy pre-prod`
+
+The target session defaults to the current OCCS session, so this is also valid after `occs use --session pre-prod`:
+
+`occs migrate --source-session non-prod`
+
+The Comms initiate endpoint does not send a selected ConfigId; it starts movement for every eligible closed ConfigId returned by the target for the source token. If you pass `migrate <configId>` or `--config-id`, OCCS CLI only uses that value as a sanity check that the ConfigId appears in the eligible list before initiating movement for the full eligible set.
+
+Use `--dry-run` to fetch and validate the eligible list without initiating movement:
+
+`occs migrate --source-session non-prod --target-tenancy pre-prod --dry-run`
 
 #### convertxml
 
