@@ -180,6 +180,11 @@ program
   .command('list-configs')
   .description('Generate list of open configuration IDs')
   .option('-o, --output <dir>', 'Path to output folder')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
   .option('--timeout <ms>', 'Request timeout in milliseconds for config list calls (default 10000)')
   .option('--json', 'Write machine-readable JSON to stdout')
   .action(listConfigsCommand);
