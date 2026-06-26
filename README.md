@@ -223,15 +223,27 @@ example_bills-16.0/
   occs-package.json
   assembly-template.json
   version-master.json
+  document-associations.json
 ```
 
 `assembly-template.json` contains the Assembly Template JSON blob. `version-master.json` contains the version master fields needed for package maintenance, including document ordering via `DocumentRelIndex`. `occs-package.json` is the manifest ATool should use to identify the package/version UUIDs, file paths, source hashes, and API endpoints.
+`document-associations.json` is a resolved helper file for UIs. It maps each package/document relationship row to document config metadata such as `documentShortName`, `documentConfigUuid`, `documentRelIndex`, and `documentAlwaysTriggerInd`. The authoritative save surface remains `version-master.json`.
 
 `package save` requires `--config-id`, resolves it to the internal open ConfigId, and uses it only on save requests. The command does not create package versions and does not expose ConfigId list/create operations.
 
 When a bundle has changes, `package save` follows the observed OCCS save flow: it saves the version master payload and uploads the Assembly Template blob only for changed surfaces. `--dry-run --json` reports which bundle files changed without uploading either request.
 
 When `--json` is passed, stdout contains only one JSON object. Progress and verbose logs are written to stderr, and failures return a non-zero exit code with an `{ "ok": false, "error": ... }` JSON payload.
+
+### Document Catalog
+
+Use the document catalog command to build or refresh a searchable document metadata cache for tools such as ATool:
+
+* `occs documents catalog --json`
+* `occs documents catalog --name CO-G3 --json`
+* `occs documents catalog --name demo -o ~/.atool/document-catalog.json --json`
+
+The JSON output includes document config UUID, short name, name, description, and ConfigId. ATool can use this cache to add package document associations by short name while saving the underlying `CommunicationDocumentConfigUuid`.
 
 #### preflight
 

@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 import { spawn, spawnSync } from 'child_process';
 import loginCommand from '../lib/auth.js';
-import { listDocumentsCommand } from '../lib/documents.js';
+import { documentCatalogCommand, listDocumentsCommand } from '../lib/documents.js';
 import { listPackagesCommand } from '../lib/packages.js';
 import { listLayoutsCommand } from '../lib/layouts.js';
 import { listContentsCommand } from '../lib/contents.js';
@@ -454,6 +454,27 @@ program
   .option('-o, --output <dir>', 'Output directory to dump document data')
   .option('-v, --verbose', 'Verbose logging')
   .action(listDocumentsCommand);
+
+const documentsCommand = program
+  .command('documents')
+  .description('Search and cache communication document metadata')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup');
+
+documentsCommand
+  .command('catalog')
+  .description('Search communication documents and write a JSON catalog')
+  .option('--name <name>', 'Document short-name search text')
+  .option('--query <query>', 'Alias for --name')
+  .option('-o, --output <file>', 'Write catalog JSON to a file')
+  .option('--timeout <ms>', 'Request timeout in milliseconds for document API calls (default 10000)')
+  .option('--limit <n>', 'Page size for document API calls (default 49)')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(documentCatalogCommand);
 
 program
   .command('list-layouts')
