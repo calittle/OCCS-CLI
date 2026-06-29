@@ -450,6 +450,8 @@ Generates flat catalogs of all CCS components for quick overview. Separate CSV f
 
 Generate a cross-reference CSV of relationships across documents, layouts, contents, styles, fonts, and fields. The file is output in the "crossref" subdirectory of the output directory.
 
+Content blobs are scanned for embedded references, including field usage in `<comms-data>` / `<comms-cond>` tags and conditional content references such as `$Cond{"Condition":"DC472=='xyz'","Content":"Some_Content_Item"}`. Conditional content references are reported as `Content` → `Content` rows with `usageType=cond-content`.
+
 `occs-cli report-xref`
 
 #### graph
