@@ -21,6 +21,7 @@ import { conditionCheckCommand } from '../lib/conditionCheck.js';
 import { templateCompareCommand } from '../lib/templateCompare.js';
 import { consumeRuntimeCompletionContext, startRuntimeCounter, stopRuntimeCounter } from '../lib/runtimeCounter.js';
 import { sessionsCommand, useSessionCommand } from '../lib/sessionCommands.js';
+import { setJsonPretty } from '../lib/utils.js';
 
 const program = new Command();
 
@@ -135,10 +136,12 @@ program
   .name('occs')
   .description('Oracle CCS CLI utility')
   .version('1.0.0')
-  .option('--notify', 'Show a desktop notification and play a sound after successful command execution');
+  .option('--notify', 'Show a desktop notification and play a sound after successful command execution')
+  .option('--pretty', 'Pretty-print JSON output and preserve JSON string whitespace');
 
 program.hook('preAction', (_thisCommand, actionCommand) => {
   const opts = actionCommand?.optsWithGlobals?.() || {};
+  setJsonPretty(opts.pretty || process.argv.includes('--pretty'));
   if (opts.json) {
     return;
   }

@@ -117,6 +117,7 @@ occs graph
 1. `-V, --version`             output the version number
 1. `-h, --help`                display help for command
 1. `--notify`                  show a desktop notification and play a sound after successful command execution
+1. `--pretty`                  pretty-print JSON output and preserve JSON string whitespace
 
 ### Commands
 1. `report-catalog [options]`  Generate flat catalog of all CCS components
@@ -233,6 +234,8 @@ example_bills-16.0/
 
 When a bundle has changes, `package save` follows the observed OCCS save flow: it saves the version master payload and uploads the Assembly Template blob only for changed surfaces. `--dry-run --json` reports which bundle files changed without uploading either request.
 
+By default, JSON written by the CLI is flattened: formatting whitespace is omitted and `\n`, `\r`, and `\t` are removed from JSON string values and object keys before writing or submitting Comms-facing JSON. Use `--pretty` to preserve the previous indented JSON output.
+
 When `--json` is passed, stdout contains only one JSON object. Progress and verbose logs are written to stderr, and failures return a non-zero exit code with an `{ "ok": false, "error": ... }` JSON payload.
 
 ### Document Catalog
@@ -321,7 +324,7 @@ Optional parameters:
 * `--extract <expr>`: For batch XML input, extract a single record by expression from each XML file (supports `field=value` or `field==value`), e.g. `billId=002051606115`.
 * `--reroot <newRoot>`: Reroot converted JSON to the specified element. Defaults to `billPrint`.
 * `--disable-reroot`: Disable converted JSON rerooting entirely (overrides the default `billPrint` reroot).
-* `--preserveNL`: Preserve newline characters in converted JSON string values. By default, `convertxml` strips `\n` from all string values after conversion.
+* `--preserveNL`: Preserve newline characters in converted JSON string values before final JSON serialization. Final output is still flattened unless `--pretty` is also passed.
 
 Examples:
 * `occs convertxml -i ./data/input.xml -o ./json/input.json --session pre-prod`
@@ -378,6 +381,8 @@ If a preview request fails and Oracle returns an error body, preview writes an e
 
 For XML input, preview also writes the converted JSON used as `AssemblyData`:
 * Generated input JSON sidecar: `<output-name>.generated-input.json`
+
+Preview submits flattened `AssemblyData` JSON by default. Use `--pretty` to submit and write indented JSON instead.
 
 #### condition-check
 
