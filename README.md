@@ -232,7 +232,7 @@ example_bills-16.0/
 
 `package save` requires `--config-id`, resolves it to the internal open ConfigId, and uses it only on save requests. The command does not create package versions and does not expose ConfigId list/create operations.
 
-When a bundle has changes, `package save` follows the observed OCCS save flow: it saves the version master payload and uploads the Assembly Template blob only for changed surfaces. `--dry-run --json` reports which bundle files changed without uploading either request.
+When a bundle has changes, `package save` reports which bundle files changed. Assembly Template-only changes upload only the Assembly Template blob. Version master changes also re-upload the current Assembly Template blob so package document metadata and the template blob remain paired in Comms. `--dry-run --json` reports changed files and the upload plan without uploading either request.
 
 By default, JSON written by the CLI is flattened: formatting whitespace is omitted and `\n`, `\r`, and `\t` are removed from JSON string values and object keys before writing or submitting Comms-facing JSON. Use `--pretty` to preserve the previous indented JSON output.
 
