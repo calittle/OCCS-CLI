@@ -279,7 +279,7 @@ program
   .option('-r, --render-type <type...>', 'Render type(s): PDF, HTML, TEXT, CSV, JSON, METADATA, EMAIL (supports comma or space separated values)', ['PDF'])
   .option('--email-config-uuid <uuid>', 'Email communication configuration UUID (or OCCS_EMAIL_CONFIG_UUID)')
   .option('--recipient <email>', 'Override email recipient; repeat or comma-separate values', (value, previous = []) => [...previous, value], [])
-  .option('--send-email', 'Required acknowledgement before EMAIL submits a real email')
+  .option('--send-email', 'Submit EMAIL to Comms; otherwise report the email that would be sent')
   .option('-o, --output <path>', 'Output file path (or directory)')
   .option('-v, --verbose', 'Verbose logging')
   .action(previewCommand);

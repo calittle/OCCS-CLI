@@ -302,8 +302,8 @@ Optional parameters:
 * `-e, --effective-date <date>`: Effective date in `YYYY-MM-DD` format. Defaults to today.
 * `-r, --render-type <type...>`: One or more render types (`PDF`, `HTML`, `TEXT`, `CSV`, `JSON`, `METADATA`, `EMAIL`). Supports comma-separated (`-r PDF,HTML`) or space-separated (`-r PDF HTML`) values. Defaults to `PDF`.
 * `--email-config-uuid <uuid>`: Required for `EMAIL` unless `OCCS_EMAIL_CONFIG_UUID` is set. This is the `CommunicationConfigUuid` used by the email communication API.
-* `--recipient <email>`: Override `billPrint.billDetails.eBill.recipientEmails`; repeat the option or use comma-separated values. If omitted, `OCCS_EMAIL_RECIPIENTS` is used when set; otherwise, recipients from the input JSON are preserved.
-* `--send-email`: Required acknowledgement before `EMAIL` sends a real email.
+* `--recipient <email>`: Override `billPrint.billDetails.cmElements.eBill.recipientEmails`; repeat the option or use comma-separated values. The CLI creates the `eBill.recipientEmails` structure when absent. If omitted, `OCCS_EMAIL_RECIPIENTS` is used when set; otherwise, recipients from the input JSON are preserved.
+* `--send-email`: Submit the real email. Without it, `EMAIL` validates the request and reports the recipients and configuration it would use, without posting to Comms.
 * `--timeout <ms>`: Request timeout override for preview/XML-converter calls. Default is `60000`.
 * `-d, --debug [name] [value]`: Inject a debug key/value into the input JSON (or converted XML JSON) before preview submission. Defaults to `DEBUGCOMMS=1` when `-d` is provided without values. Supports dot notation for nested keys (example: `--debug root.flags.DEBUGCOMMS 1`).
 * `-o, --output <path>`: Output file path (or directory). Defaults to the current working directory using the input filename stem plus extension based on render type. When `--input` is a folder, `--output` must be a directory path and output filenames mirror the input folder structure.
