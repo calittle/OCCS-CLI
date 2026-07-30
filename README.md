@@ -254,6 +254,8 @@ If `--input` points to a folder, `convertxml` recursively finds all `.xml` files
 
 For XML batches with multiple `<C1-BillPrintRecord>` or `<billPrint>` elements, `convertxml` converts each transaction and suffixes output filenames by `billId` when available.
 
+Before contacting Oracle, OCCS CLI checks that each XML input is well-formed and reports the local parser error (including its line and column when available).
+
 By default, converted JSON is rerooted to `billPrint`, matching XML preview behavior. Credentials must be available from encrypted saved login credentials, env, or flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
 
 Optional parameters:
@@ -282,6 +284,7 @@ Render a package preview by submitting input JSON or XML to CCS.
 If `--input` points to a folder, `preview` recursively finds all `.json` files and renders each one.
 
 If the input is XML (`.xml` or file starts with `<`), `preview` will:
+* Validate XML well-formedness locally before contacting Oracle
 * Normalize selected XML transaction payload whitespace for converter submission
 * Auto-detect multi-transaction batches (multiple `<C1-BillPrintRecord>` or `<billPrint>` elements), preview each transaction, and suffix output filenames by `billId` when available
 * Call `CommunicationFileTransfer/v1/XmlToJsonConverter`
