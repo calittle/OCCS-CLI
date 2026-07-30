@@ -146,6 +146,8 @@ Downloads all CCS data including packages, documents, layouts, contents, styles,
 
 `occs-cli get-everything`
 
+The export is recoverable if a font file cannot be retrieved: all metadata and every successfully downloaded file remain in place, styles are still exported, and a later `occs list-fonts` retries only missing font files. A failed font file is reported at the end and causes a non-zero exit code so unattended jobs can still detect the incomplete export.
+
 #### package
 
 Maintain communication packages with a small ATool-friendly command surface.

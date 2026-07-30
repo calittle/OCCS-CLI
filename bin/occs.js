@@ -385,8 +385,13 @@ program
     await listDocumentsCommand(cmd);    
     await listLayoutsCommand(cmd);
     await listContentsCommand(cmd);
-    await listFontsCommand(cmd);
+    const fonts = await listFontsCommand(cmd);
     await listStylesCommand(cmd);
+    if (fonts?.ok === false) {
+      console.error("⚠ Export completed with font download failures. Run `occs list-fonts` later to retry only missing font files.");
+      process.exitCode = 1;
+      return;
+    }
     console.log("(>'-')> ✨ Done!\n");
   });
 
