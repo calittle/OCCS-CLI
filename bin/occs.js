@@ -261,9 +261,9 @@ program
 
 program
   .command('preview')
-  .description('Render a communication package preview from input JSON or XML')
+  .description('Render a communication package preview or submit an email from input JSON or XML')
   .requiredOption('-i, --input <path>', 'Input JSON/XML file path, or folder of JSON files')
-  .requiredOption('-p, --package <name>', 'Communication package short name')
+  .option('-p, --package <name>', 'Communication package short name (required except for EMAIL-only requests)')
   .option('--session <name>', 'Saved session alias or key to use')
   .option('--customer <customer>', 'Customer short name for saved-session lookup')
   .option('--region <region>', 'Oracle region for saved-session lookup')
@@ -276,7 +276,10 @@ program
   .option('--timeout <ms>', 'Request timeout in milliseconds for preview/converter calls (default 60000)')
   .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD), defaults to today')
   .option('-d, --debug [nameAndValue...]', 'Inject debug key/value into JSON input. Defaults: name=DEBUGCOMMS value=1')
-  .option('-r, --render-type <type...>', 'Render type(s): PDF, HTML, TEXT, CSV, JSON, METADATA (supports comma or space separated values)', ['PDF'])
+  .option('-r, --render-type <type...>', 'Render type(s): PDF, HTML, TEXT, CSV, JSON, METADATA, EMAIL (supports comma or space separated values)', ['PDF'])
+  .option('--email-config-uuid <uuid>', 'Email communication configuration UUID (or OCCS_EMAIL_CONFIG_UUID)')
+  .option('--recipient <email>', 'Override email recipient; repeat or comma-separate values', (value, previous = []) => [...previous, value], [])
+  .option('--send-email', 'Required acknowledgement before EMAIL submits a real email')
   .option('-o, --output <path>', 'Output file path (or directory)')
   .option('-v, --verbose', 'Verbose logging')
   .action(previewCommand);

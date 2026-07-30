@@ -105,6 +105,8 @@ Login credentials are saved encrypted for commands that must refresh Oracle toke
 * `OCCS_PASSWORD` (plain text)
 * `OCCS_PASSWORD_ENC` (encrypted password)
 * `OCCS_PASSWORD_KEY` (decryption key for `OCCS_PASSWORD_ENC`)
+* `OCCS_EMAIL_CONFIG_UUID` (default email communication configuration UUID for `preview -r EMAIL`)
+* `OCCS_EMAIL_RECIPIENTS` (comma-separated default recipient override for `preview -r EMAIL`)
 
 `--environment` is also supported as an alias for `--region`.
 `--env-file` is supported to explicitly set which env file to use.
@@ -277,7 +279,7 @@ Examples:
 
 #### preview
 
-Render a package preview by submitting input JSON or XML to CCS.
+Render a package preview, or submit an email communication, from input JSON or XML to CCS.
 
 `occs preview --input ./data/input.json --package MY_PACKAGE`
 
@@ -298,7 +300,10 @@ Optional parameters:
 * `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
 * `--customer <customer>`, `--region <region>`/`--environment <environment>`, `--tenancy <tenancy>`: Select a saved session by target. Omitted target parts default from the current session.
 * `-e, --effective-date <date>`: Effective date in `YYYY-MM-DD` format. Defaults to today.
-* `-r, --render-type <type...>`: One or more render types (`PDF`, `HTML`, `TEXT`, `CSV`, `JSON`, `METADATA`). Supports comma-separated (`-r PDF,HTML`) or space-separated (`-r PDF HTML`) values. Defaults to `PDF`.
+* `-r, --render-type <type...>`: One or more render types (`PDF`, `HTML`, `TEXT`, `CSV`, `JSON`, `METADATA`, `EMAIL`). Supports comma-separated (`-r PDF,HTML`) or space-separated (`-r PDF HTML`) values. Defaults to `PDF`.
+* `--email-config-uuid <uuid>`: Required for `EMAIL` unless `OCCS_EMAIL_CONFIG_UUID` is set. This is the `CommunicationConfigUuid` used by the email communication API.
+* `--recipient <email>`: Override `billPrint.billDetails.eBill.recipientEmails`; repeat the option or use comma-separated values. If omitted, `OCCS_EMAIL_RECIPIENTS` is used when set; otherwise, recipients from the input JSON are preserved.
+* `--send-email`: Required acknowledgement before `EMAIL` sends a real email.
 * `--timeout <ms>`: Request timeout override for preview/XML-converter calls. Default is `60000`.
 * `-d, --debug [name] [value]`: Inject a debug key/value into the input JSON (or converted XML JSON) before preview submission. Defaults to `DEBUGCOMMS=1` when `-d` is provided without values. Supports dot notation for nested keys (example: `--debug root.flags.DEBUGCOMMS 1`).
 * `-o, --output <path>`: Output file path (or directory). Defaults to the current working directory using the input filename stem plus extension based on render type. When `--input` is a folder, `--output` must be a directory path and output filenames mirror the input folder structure.
@@ -315,6 +320,7 @@ Examples:
 * `occs preview -i ./data/input.json -p MY_PACKAGE -d` -> injects `DEBUGCOMMS: 1`
 * `occs preview -i ./data/input.json -p MY_PACKAGE -d DEBUGCOMMS 0`
 * `occs preview -i ./data/input.json -p MY_PACKAGE -d root.flags.DEBUG "on"`
+* `occs preview -i ./data/input.json -r EMAIL --email-config-uuid "$OCCS_EMAIL_CONFIG_UUID" --recipient andy.little@oracle.com --send-email`
 
 Preview writes the rendered output file (for example `.pdf`) decoded from `CommunicationAssemblyInfo.AssemblyRenderOutput`.
 When `-v/--verbose` is enabled and the API returns JSON wrapper output, preview also writes:
@@ -328,6 +334,8 @@ For XML input, preview also writes the converted JSON used as `AssemblyData`:
 * Generated input JSON sidecar: `<output-name>.generated-input.json`
 
 Preview submits flattened `AssemblyData` JSON by default. Use `--pretty` to submit and write indented JSON instead.
+
+`EMAIL` posts `CommunicationInfo` to `Communication/v1/CommunicationRec` with the input JSON serialized into `CommunicationData`. It does not create a rendered output file. `--package` is not required for an `EMAIL`-only request.
 
 #### condition-check
 
