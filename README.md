@@ -58,6 +58,7 @@ occs graph
 1. `-h, --help`                display help for command
 1. `--notify`                  show a desktop notification and play a sound after successful command execution
 1. `--pretty`                  pretty-print JSON output and preserve JSON string whitespace
+1. `--timeout <ms>`            default HTTP request timeout for all OCCS calls (default `360000`, or 360 seconds)
 
 ### Commands
 1. `report-catalog [options]`  Generate flat catalog of all CCS components
@@ -263,7 +264,7 @@ By default, converted JSON is rerooted to `billPrint`, matching XML preview beha
 Optional parameters:
 * `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
 * `--customer <customer>`, `--region <region>`/`--environment <environment>`, `--tenancy <tenancy>`: Select a saved session by target. Omitted target parts default from the current session.
-* `--timeout <ms>`: Request timeout override for XML-converter calls. Default is `60000`.
+* `--timeout <ms>`: Request timeout override for XML-converter calls. Default is `360000` (360 seconds).
 * `-d, --debug [name] [value]`: Inject a debug key/value into converted JSON. Defaults to `DEBUGCOMMS=1` when `-d` is provided without values.
 * `-o, --output <path>`: Output JSON file path for a single input file, or output directory for folder input. Folder input mirrors the input folder structure.
 * `--env-file <path>`: Optional env file path for credential defaults.
@@ -304,7 +305,7 @@ Optional parameters:
 * `--email-config-uuid <uuid>`: Required for `EMAIL` unless `OCCS_EMAIL_CONFIG_UUID` is set. This is the `CommunicationConfigUuid` used by the email communication API.
 * `--recipient <email>`: Override `billPrint.billDetails.cmElements.eBill.recipientEmails`; repeat the option or use comma-separated values. The CLI creates the `eBill.recipientEmails` structure when absent. If omitted, `OCCS_EMAIL_RECIPIENTS` is used when set; otherwise, recipients from the input JSON are preserved.
 * `--send-email`: Submit the real email. Without it, `EMAIL` validates the request and reports the recipients and configuration it would use, without posting to Comms.
-* `--timeout <ms>`: Request timeout override for preview/XML-converter calls. Default is `60000`.
+* `--timeout <ms>`: Request timeout override for preview/XML-converter calls. Default is `360000` (360 seconds).
 * `-d, --debug [name] [value]`: Inject a debug key/value into the input JSON (or converted XML JSON) before preview submission. Defaults to `DEBUGCOMMS=1` when `-d` is provided without values. Supports dot notation for nested keys (example: `--debug root.flags.DEBUGCOMMS 1`).
 * `-o, --output <path>`: Output file path (or directory). Defaults to the current working directory using the input filename stem plus extension based on render type. When `--input` is a folder, `--output` must be a directory path and output filenames mirror the input folder structure.
 * `--env-file <path>`: Optional env file path for credential defaults.

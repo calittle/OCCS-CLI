@@ -22,6 +22,7 @@ import { templateCompareCommand } from '../lib/templateCompare.js';
 import { consumeRuntimeCompletionContext, startRuntimeCounter, stopRuntimeCounter } from '../lib/runtimeCounter.js';
 import { sessionsCommand, useSessionCommand } from '../lib/sessionCommands.js';
 import { setJsonPretty } from '../lib/utils.js';
+import { DEFAULT_REQUEST_TIMEOUT_MS, setDefaultRequestTimeoutMs } from '../lib/requestTimeout.js';
 
 const program = new Command();
 
@@ -137,11 +138,13 @@ program
   .description('Oracle CCS CLI utility')
   .version('1.0.0')
   .option('--notify', 'Show a desktop notification and play a sound after successful command execution')
-  .option('--pretty', 'Pretty-print JSON output and preserve JSON string whitespace');
+  .option('--pretty', 'Pretty-print JSON output and preserve JSON string whitespace')
+  .option('--timeout <ms>', `Default HTTP request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`);
 
 program.hook('preAction', (_thisCommand, actionCommand) => {
   const opts = actionCommand?.optsWithGlobals?.() || {};
   setJsonPretty(opts.pretty || process.argv.includes('--pretty'));
+  setDefaultRequestTimeoutMs(opts.timeout);
   if (opts.json) {
     return;
   }
@@ -188,7 +191,7 @@ program
   .option('--region <region>', 'Oracle region for saved-session lookup')
   .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
   .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for config list calls (default 10000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for config list calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('--json', 'Write machine-readable JSON to stdout')
   .action(listConfigsCommand);
 
@@ -213,7 +216,7 @@ program
   .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
   .option('--dry-run', 'Resolve and report the close request without sending it')
   .option('--force', 'Submit the close request even if the current ConfigId status is not Open')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for close calls (default 30000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for close calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(closeConfigCommand);
@@ -230,7 +233,7 @@ program
   .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
   .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
   .option('--dry-run', 'Build and report the create request without sending it')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for create calls (default 30000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for create calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(createConfigCommand);
@@ -253,8 +256,8 @@ program
   .option('--target-tenancy <tenancy>', 'Target tenancy path for saved-session lookup')
   .option('--dry-run', 'Fetch and validate the eligible movement list without initiating movement')
   .option('--force', 'Initiate even if the target movement monitor reports a busy status')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for movement API calls (default 10000)')
-  .option('--token-timeout <ms>', 'Request timeout in milliseconds for source token refresh (default 20000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for movement API calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('--token-timeout <ms>', `Request timeout in milliseconds for source token refresh (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(migrateCommand);
@@ -273,7 +276,7 @@ program
   .option('--extract <expr>', 'For XML batches, extract a single record by expression (e.g. billId=002051606115)')
   .option('--reroot <newRoot>', 'For XML input, reroot converted JSON to this element before preview (defaults to billPrint)')
   .option('--disable-reroot', 'For XML input, disable converted JSON rerooting (overrides the default billPrint reroot)')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for preview/converter calls (default 60000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for preview/converter calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD), defaults to today')
   .option('-d, --debug [nameAndValue...]', 'Inject debug key/value into JSON input. Defaults: name=DEBUGCOMMS value=1')
   .option('-r, --render-type <type...>', 'Render type(s): PDF, HTML, TEXT, CSV, JSON, METADATA, EMAIL (supports comma or space separated values)', ['PDF'])
@@ -298,7 +301,7 @@ program
   .option('--reroot <newRoot>', 'Reroot converted JSON to this element (defaults to billPrint)')
   .option('--disable-reroot', 'Disable converted JSON rerooting (overrides the default billPrint reroot)')
   .option('--preserveNL', 'Preserve newline characters in converted JSON string values')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for XML-converter calls (default 60000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for XML-converter calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('-d, --debug [nameAndValue...]', 'Inject debug key/value into converted JSON. Defaults: name=DEBUGCOMMS value=1')
   .option('-o, --output <path>', 'Output JSON file path, or output directory when input is a folder')
   .option('-v, --verbose', 'Verbose logging')
@@ -411,7 +414,7 @@ packageCommand
   .command('list [name]')
   .description('List communication packages')
   .option('--name <name>', 'Package short-name search text')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for package API calls (default 10000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for package API calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(packageListCommand);
@@ -422,7 +425,7 @@ packageCommand
   .option('--package-version <version>', 'Package version short name, or latest')
   .option('-o, --output <dir>', 'Output bundle directory')
   .option('--force', 'Overwrite bundle files in an existing output directory')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for package API calls (default 10000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for package API calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(packageGetCommand);
@@ -432,7 +435,7 @@ packageCommand
   .description('Save a package maintenance bundle to an open ConfigId')
   .requiredOption('--config-id <nameOrId>', 'Open ConfigId name, short name, or internal id')
   .option('--dry-run', 'Report changes without uploading')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for package API calls (default 30000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for package API calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(packageSaveCommand);
@@ -481,7 +484,7 @@ documentsCommand
   .option('--name <name>', 'Document short-name search text')
   .option('--query <query>', 'Alias for --name')
   .option('-o, --output <file>', 'Write catalog JSON to a file')
-  .option('--timeout <ms>', 'Request timeout in milliseconds for document API calls (default 10000)')
+  .option('--timeout <ms>', `Request timeout in milliseconds for document API calls (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('--limit <n>', 'Page size for document API calls (default 49)')
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
