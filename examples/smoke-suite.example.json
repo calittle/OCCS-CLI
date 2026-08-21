@@ -1,0 +1,12 @@
+{
+  "name": "Example pre-prod smoke",
+  "tenancy": "pre-prod",
+  "tests": [
+    { "id": "bill-rt", "type": "Bill RT", "package": "example_bills", "input": "bill-RT.json" },
+    { "id": "bill-nrt", "type": "Bill NRT", "package": "example_bills", "input": "bill-NRT.json" },
+    { "id": "bill-bulk", "type": "Bill BULK", "package": "example_bills", "input": "bill-BULK.json" },
+    { "id": "bill-plt", "type": "Bill PLT", "package": "example_bills", "input": "bill-PLT.json" },
+    { "id": "letter", "type": "Letter", "package": "example_letters", "input": "letter.json" },
+    { "id": "ebill", "type": "eBill", "package": "example_email_body_ebill", "input": "eBill.json" }
+  ]
+}

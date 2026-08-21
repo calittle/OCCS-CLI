@@ -68,6 +68,7 @@ occs graph
 1. `sessions`                  List saved OCCS sessions
 1. `use [options]`             Set the default OCCS session
 1. `preview [options]`         Render a package preview file from input JSON/XML
+1. `smoke [options]`           Run package preview smoke suite and draft an email report
 1. `convertxml [options]`      Convert XML input files to JSON
 1. `condition-check [options]` Evaluate Assembly Template document conditions against input JSON
 1. `template-compare [options]` Compare two Assembly Template JSON files semantically
@@ -337,6 +338,35 @@ For XML input, preview also writes the converted JSON used as `AssemblyData`:
 Preview submits flattened `AssemblyData` JSON by default. Use `--pretty` to submit and write indented JSON instead.
 
 `EMAIL` posts `CommunicationInfo` to `Communication/v1/CommunicationRec` with the input JSON serialized into `CommunicationData`. It does not create a rendered output file. `--package` is not required for an `EMAIL`-only request.
+
+#### smoke
+
+Run a small set of package previews and create an **unsent** email draft. A smoke run only verifies that each requested PDF or HTML output is generated; it does not compare output against a baseline and it never sends email.
+
+Create a suite JSON file. Input paths are relative to the suite file:
+
+```json
+{
+  "name": "Example pre-prod smoke",
+  "tenancy": "pre-prod",
+  "tests": [
+    { "id": "bill-rt", "type": "Bill RT", "package": "example_bills", "input": "bill-RT.json" },
+    { "id": "bill-nrt", "type": "Bill NRT", "package": "example_bills", "input": "bill-NRT.json" },
+    { "id": "bill-bulk", "type": "Bill BULK", "package": "example_bills", "input": "bill-BULK.json" },
+    { "id": "bill-plt", "type": "Bill PLT", "package": "example_bills", "input": "bill-PLT.json" },
+    { "id": "letter", "type": "Letter", "package": "example_letters", "input": "letter.json" },
+    { "id": "ebill", "type": "eBill", "package": "example_email_body_ebill", "input": "eBill.json" }
+  ]
+}
+```
+
+Run it with:
+
+```sh
+occs smoke --suite ./smoke-suite.json --output ./smoke-output
+```
+
+Each entry may include `"renderTypes": ["PDF", "HTML"]`; PDF is the default. Use `--tenancy non-prod` to override the suite target. Add `--resume` to retain existing non-empty outputs and render only missing entries. The run writes `smoke-results.json`, rendered files under `previews/`, PDF first-page PNGs under `thumbnails/`, a browser report (`smoke-report.html`), and two email draft artifacts: `smoke-email.html` and `smoke-email.eml`. Open the `.eml` file in Outlook to review or edit the message, then send it yourself if appropriate.
 
 #### condition-check
 

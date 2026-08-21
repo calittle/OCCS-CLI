@@ -18,6 +18,7 @@ import { preflightCommand } from '../lib/preflight.js';
 import { closeConfigCommand, createConfigCommand, migrateCommand } from '../lib/migration.js';
 import { convertXmlCommand, previewCommand } from '../lib/preview.js';
 import { conditionCheckCommand } from '../lib/conditionCheck.js';
+import { smokeCommand } from '../lib/smoke.js';
 import { templateCompareCommand } from '../lib/templateCompare.js';
 import { consumeRuntimeCompletionContext, startRuntimeCounter, stopRuntimeCounter } from '../lib/runtimeCounter.js';
 import { sessionsCommand, useSessionCommand } from '../lib/sessionCommands.js';
@@ -286,6 +287,20 @@ program
   .option('-o, --output <path>', 'Output file path (or directory)')
   .option('-v, --verbose', 'Verbose logging')
   .action(previewCommand);
+
+program
+  .command('smoke')
+  .description('Run package previews from a suite and create an unsent email draft')
+  .requiredOption('-s, --suite <file>', 'Smoke suite JSON file')
+  .option('--session <name>', 'Saved session alias or key to use (overrides suite session)')
+  .option('--tenancy <tenancy>', 'Saved-session tenancy to use (for example, non-prod)')
+  .option('-o, --output <dir>', 'Output directory (default: smoke-output beside the suite)')
+  .option('--resume', 'Keep existing non-empty preview files and run only missing entries')
+  .option('-r, --render-type <type...>', 'Default render types for tests without renderTypes (PDF, HTML)', ['PDF'])
+  .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD)')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include preview request detail')
+  .action(smokeCommand);
 
 program
   .command('convertxml')
