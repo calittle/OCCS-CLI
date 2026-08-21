@@ -341,7 +341,7 @@ Preview submits flattened `AssemblyData` JSON by default. Use `--pretty` to subm
 
 #### smoke
 
-Run a small set of package previews and create an **unsent** email draft. A smoke run only verifies that each requested PDF or HTML output is generated; it does not compare output against a baseline and it never sends email.
+Run a small set of package previews and create an **unsent** email draft. A normal smoke run only verifies that each requested PDF or HTML output is generated and it never sends email.
 
 Create a suite JSON file. Input paths are relative to the suite file:
 
@@ -367,6 +367,14 @@ occs smoke --suite ./smoke-suite.json --output ./smoke-output
 ```
 
 Each entry may include `"renderTypes": ["PDF", "HTML"]`; PDF is the default. Use `--tenancy non-prod` to override the suite target. Add `--resume` to retain existing non-empty outputs and render only missing entries. The run writes `smoke-results.json`, rendered files under `previews/`, PDF first-page PNGs under `thumbnails/`, a browser report (`smoke-report.html`), and two email draft artifacts: `smoke-email.html` and `smoke-email.eml`. Open the `.eml` file in Outlook to review or edit the message, then send it yourself if appropriate.
+
+To compare two targets side by side, add a second target:
+
+```sh
+occs smoke --suite ./smoke-suite.json --tenancy non-prod --compare-tenancy pre-prod
+```
+
+Both environments must generate a PDF for the comparison to run. The report shows a thumbnail for each target, a separate render result for each, and a comparison result: **Pass**, **Review**, or **N/A**. It rasterizes every PDF page and ignores small anti-aliasing differences (3% pixel fuzz). A comparison passes when the most different page has no more than 1% changed pixels; change that tolerance with `--compare-threshold 0.02`. Review cases retain a visual difference image under `comparisons/`.
 
 #### condition-check
 
