@@ -271,7 +271,7 @@ Optional parameters:
 * `--env-file <path>`: Optional env file path for credential defaults.
 * `--extract <expr>`: For batch XML input, extract a single record by expression from each XML file (supports `field=value` or `field==value`), e.g. `billId=002051606115`.
 * `--xsd <path>`: Use a local XSD for conversion instead of `XmlToJsonConverter`. Relative `xs:include` and `xs:import` references are resolved from the containing XSD. Elements declared with `maxOccurs` greater than one (or `unbounded`) are emitted as JSON arrays. XSD numeric and boolean types become JSON primitives; schema strings retain identifiers and leading zeroes. Empty optional XML elements are omitted, matching the Oracle converter.
-* `--reroot <newRoot>`: Reroot converted JSON to the specified element. Defaults to `billPrint`.
+* `--reroot <newRoot>`: Reroot converted JSON to the specified element. By default, the converter automatically chooses `billPrint` or `statementPrint` from the XML document.
 * `--disable-reroot`: Disable converted JSON rerooting entirely (overrides the default `billPrint` reroot).
 * `--preserveNL`: Preserve newline characters in converted JSON string values before final JSON serialization. Final output is still flattened unless `--pretty` is also passed.
 
@@ -314,7 +314,7 @@ Optional parameters:
 * `--env-file <path>`: Optional env file path for credential defaults.
 * `--extract <expr>`: For batch XML input, extract a single record by expression (supports `field=value` or `field==value`), e.g. `billId=002051606115`.
 * `--xsd <path>`: For XML input, convert locally using this XSD instead of the Oracle XML conversion API. Preview still requires a valid saved access token or credentials to submit the rendered request.
-* `--reroot <newRoot>`: For XML input, reroot converted JSON to the specified element before preview submission. Defaults to `billPrint`.
+* `--reroot <newRoot>`: For XML input, reroot converted JSON to the specified element before preview submission. By default, the converter automatically chooses `billPrint` or `statementPrint` from the XML document.
 * `--disable-reroot`: For XML input, disable converted JSON rerooting entirely (overrides the default `billPrint` reroot).
 
 Examples:

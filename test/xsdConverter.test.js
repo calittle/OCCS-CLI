@@ -57,3 +57,22 @@ test('convertxml uses --xsd without loading an Oracle session', () => {
   assert.deepEqual(JSON.parse(fs.readFileSync(jsonPath, 'utf8')), { billPrint: { billId: '001' } });
   fs.rmSync(directory, { recursive: true, force: true });
 });
+
+test('convertxml automatically reroots statement XML to statementPrint', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'occs-statement-xsd-'));
+  const schemaPath = path.join(directory, 'statement.xsd');
+  const xmlPath = path.join(directory, 'statement.xml');
+  const jsonPath = path.join(directory, 'statement.json');
+  fs.writeFileSync(schemaPath, '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="CM-StatementPrintRecord"><xs:complexType><xs:sequence><xs:element name="statementPrint"><xs:complexType><xs:sequence><xs:element name="statementDetails"><xs:complexType><xs:sequence><xs:element name="accountId" type="xs:string"/></xs:sequence></xs:complexType></xs:element></xs:sequence></xs:complexType></xs:element></xs:sequence></xs:complexType></xs:element></xs:schema>');
+  fs.writeFileSync(xmlPath, '<root><CM-StatementPrintRecord><statementPrint><statementDetails><accountId>123</accountId></statementDetails></statementPrint></CM-StatementPrintRecord></root>');
+
+  execFileSync(process.execPath, ['bin/occs.js', 'convertxml', '-i', xmlPath, '-o', jsonPath, '--xsd', schemaPath], {
+    cwd: path.resolve(import.meta.dirname, '..'),
+    stdio: 'pipe',
+  });
+
+  assert.deepEqual(JSON.parse(fs.readFileSync(jsonPath, 'utf8')), {
+    statementPrint: { statementDetails: { accountId: '123' } },
+  });
+  fs.rmSync(directory, { recursive: true, force: true });
+});
