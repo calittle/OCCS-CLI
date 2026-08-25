@@ -250,7 +250,7 @@ Use `--dry-run` to fetch and validate the eligible list without initiating movem
 
 #### convertxml
 
-Convert XML input to JSON through Oracle CCS without rendering a preview.
+Convert XML input to JSON without rendering a preview. By default this uses Oracle CCS; pass `--xsd` to convert locally from a schema instead.
 
 `occs convertxml --input ./data/input.xml --output ./data/input.json`
 
@@ -260,7 +260,7 @@ For XML batches with multiple `<C1-BillPrintRecord>` or `<billPrint>` elements, 
 
 Before contacting Oracle, OCCS CLI checks that each XML input is well-formed and reports the local parser error (including its line and column when available).
 
-By default, converted JSON is rerooted to `billPrint`, matching XML preview behavior. Credentials must be available from encrypted saved login credentials, env, or flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
+By default, converted JSON is rerooted to `billPrint`, matching XML preview behavior. Oracle conversion requires credentials from encrypted saved login credentials, env, or flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`). Local `--xsd` conversion does not require Oracle credentials.
 
 Optional parameters:
 * `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
@@ -270,6 +270,7 @@ Optional parameters:
 * `-o, --output <path>`: Output JSON file path for a single input file, or output directory for folder input. Folder input mirrors the input folder structure.
 * `--env-file <path>`: Optional env file path for credential defaults.
 * `--extract <expr>`: For batch XML input, extract a single record by expression from each XML file (supports `field=value` or `field==value`), e.g. `billId=002051606115`.
+* `--xsd <path>`: Use a local XSD for conversion instead of `XmlToJsonConverter`. Relative `xs:include` and `xs:import` references are resolved from the containing XSD. Elements declared with `maxOccurs` greater than one (or `unbounded`) are emitted as JSON arrays. XSD numeric and boolean types become JSON primitives; schema strings retain identifiers and leading zeroes. Empty optional XML elements are omitted, matching the Oracle converter.
 * `--reroot <newRoot>`: Reroot converted JSON to the specified element. Defaults to `billPrint`.
 * `--disable-reroot`: Disable converted JSON rerooting entirely (overrides the default `billPrint` reroot).
 * `--preserveNL`: Preserve newline characters in converted JSON string values before final JSON serialization. Final output is still flattened unless `--pretty` is also passed.
@@ -278,6 +279,7 @@ Examples:
 * `occs convertxml -i ./data/input.xml -o ./json/input.json --session pre-prod`
 * `occs convertxml -i ./xml-batch-dir -o ./json-output --tenancy non-prod`
 * `occs convertxml -i ./data/input.xml --disable-reroot`
+* `occs convertxml -i ./data/input.xml -o ./data/input.json --xsd ./schemas/bill-print.xsd`
 
 #### preview
 
@@ -291,7 +293,7 @@ If the input is XML (`.xml` or file starts with `<`), `preview` will:
 * Validate XML well-formedness locally before contacting Oracle
 * Normalize selected XML transaction payload whitespace for converter submission
 * Auto-detect multi-transaction batches (multiple `<C1-BillPrintRecord>` or `<billPrint>` elements), preview each transaction, and suffix output filenames by `billId` when available
-* Call `CommunicationFileTransfer/v1/XmlToJsonConverter`
+* Call `CommunicationFileTransfer/v1/XmlToJsonConverter`, or convert locally when `--xsd` is supplied
 * Reroot the converted JSON to `billPrint` by default before preview submission
 * Re-login (converter invalidates token)
 * Submit converted JSON to `CommunicationAssembly/v1/CommunicationAssemblyRec`
@@ -311,6 +313,7 @@ Optional parameters:
 * `-o, --output <path>`: Output file path (or directory). Defaults to the current working directory using the input filename stem plus extension based on render type. When `--input` is a folder, `--output` must be a directory path and output filenames mirror the input folder structure.
 * `--env-file <path>`: Optional env file path for credential defaults.
 * `--extract <expr>`: For batch XML input, extract a single record by expression (supports `field=value` or `field==value`), e.g. `billId=002051606115`.
+* `--xsd <path>`: For XML input, convert locally using this XSD instead of the Oracle XML conversion API. Preview still requires a valid saved access token or credentials to submit the rendered request.
 * `--reroot <newRoot>`: For XML input, reroot converted JSON to the specified element before preview submission. Defaults to `billPrint`.
 * `--disable-reroot`: For XML input, disable converted JSON rerooting entirely (overrides the default `billPrint` reroot).
 
@@ -319,6 +322,7 @@ Examples:
 * `occs login -c examplecustomer -r example-region -t pre-prod --session pre-prod`
 * `occs preview -i ./data/input.xml -p MY_PACKAGE --session pre-prod`
 * `occs preview -i ./data/input.xml -p MY_PACKAGE --tenancy non-prod`
+* `occs preview -i ./data/input.xml -p MY_PACKAGE --xsd ./schemas/bill-print.xsd`
 * `occs preview -i ./data/input.json -p MY_PACKAGE -d` -> injects `DEBUGCOMMS: 1`
 * `occs preview -i ./data/input.json -p MY_PACKAGE -d DEBUGCOMMS 0`
 * `occs preview -i ./data/input.json -p MY_PACKAGE -d root.flags.DEBUG "on"`
