@@ -343,7 +343,7 @@ Preview submits flattened `AssemblyData` JSON by default. Use `--pretty` to subm
 
 Run a small set of package previews and create an **unsent** email draft. A normal smoke run only verifies that each requested PDF or HTML output is generated and it never sends email.
 
-Create a suite JSON file. Input paths are relative to the suite file:
+Create a suite JSON file. Input paths are relative to the suite file, so the suite and its sample-input folder can be moved together:
 
 ```json
 {
@@ -366,7 +366,7 @@ Run it with:
 occs smoke --suite ./smoke-suite.json --output ./smoke-output
 ```
 
-Each entry may include `"renderTypes": ["PDF", "HTML"]`; PDF is the default. Use `--tenancy non-prod` to override the suite target. Add `--resume` to retain existing non-empty outputs and render only missing entries. The run writes `smoke-results.json`, rendered files under `previews/`, PDF first-page PNGs under `thumbnails/`, a browser report (`smoke-report.html`), and two email draft artifacts: `smoke-email.html` and `smoke-email.eml`. Open the `.eml` file in Outlook to review or edit the message, then send it yourself if appropriate.
+Each entry may include `"renderTypes": ["PDF", "HTML"]`; PDF is the default. Use `--tenancy non-prod` to override the suite target. Every new run writes to a date/time-stamped output folder (for example, `smoke-output-2026-08-25_14-30-15-123`) so earlier results are retained. Add `--resume` to reuse the most recent matching output folder and render only missing entries. The run writes `smoke-results.json`, rendered files under `previews/`, PDF first-page PNGs under `thumbnails/`, a browser report (`smoke-report.html`), and two email draft artifacts: `smoke-email.html` and `smoke-email.eml`. Open the `.eml` file in Outlook to review or edit the message, then send it yourself if appropriate.
 
 To compare two targets side by side, add a second target:
 
