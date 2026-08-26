@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Forward smoke options, for example:
-#   ./run-smoke-stmt.zsh --resume
+#   ./run-smoke-compare-stmt.zsh --resume
 
 set -euo pipefail
 
@@ -19,11 +19,12 @@ if [[ ! -f "$SUITE_FILE" ]]; then
   exit 1
 fi
 
-print "\n=== Regular smoke test: $SMOKE_TARGET ==="
+print "\n=== Smoke comparison: $COMPARE_SOURCE vs $COMPARE_TARGET ==="
 node "$CLI_ROOT/bin/occs.js" smoke \
   --suite "$SUITE_FILE" \
-  --tenancy "$SMOKE_TARGET" \
-  --output "$SAMPLES_DIR/smoke-output-$SMOKE_TARGET" \
+  --tenancy "$COMPARE_SOURCE" \
+  --compare-tenancy "$COMPARE_TARGET" \
+  --output "$SAMPLES_DIR/smoke-output-$COMPARE_SOURCE-vs-$COMPARE_TARGET" \
   --timeout "$REQUEST_TIMEOUT" \
   "${EXTRA_SMOKE_ARGS[@]}"
 

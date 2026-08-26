@@ -19,12 +19,30 @@ PACKAGE_PATHS = (
     "bin",
     "lib",
     "README.md",
+    "BUILD.md",
+    "NOTES.MD",
+    "quickstart.txt",
+    "docs",
+    "examples",
+    "tools",
+    ".githooks",
+    ".occs-cli-build.local.json.example",
     "package.json",
     "package-lock.json",
 )
 LOCAL_CONFIG_FILE = ".occs-cli-build.local.json"
 ARTIFACT_ENV_VAR = "OCCS_CLI_ARTIFACT_DIR"
 DEFAULT_LATEST_NAME = "occs-cli-latest.zip"
+EXCLUDED_PACKAGE_PARTS = {"__pycache__"}
+EXCLUDED_PACKAGE_NAMES = {".DS_Store"}
+
+
+def package_file(path: Path) -> bool:
+    return path.is_file() and not (
+        any(part in EXCLUDED_PACKAGE_PARTS for part in path.parts)
+        or path.name in EXCLUDED_PACKAGE_NAMES
+        or path.name.startswith("~$")
+    )
 
 
 def run_git(repo_root: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -76,8 +94,13 @@ def resolve_destination(args: argparse.Namespace, config: dict[str, object]) -> 
 
 def collect_package_files(repo_root: Path, source: str) -> list[str]:
     if source == "head":
-        result = run_git(repo_root, "ls-tree", "-r", "--name-only", "HEAD", "--", *PACKAGE_PATHS)
-        return sorted(line for line in result.stdout.splitlines() if line)
+        packaged_files = set(run_git(repo_root, "ls-tree", "-r", "--name-only", "HEAD", "--", *PACKAGE_PATHS).stdout.splitlines())
+        root_files = set(run_git(repo_root, "ls-tree", "--name-only", "HEAD").stdout.splitlines())
+        return sorted(
+            line
+            for line in packaged_files | root_files
+            if line and package_file(Path(line)) and (line in packaged_files or Path(line).suffix.lower() in {".zsh", ".bat"})
+        )
 
     files: list[str] = []
     for relative_path in PACKAGE_PATHS:
@@ -87,11 +110,16 @@ def collect_package_files(repo_root: Path, source: str) -> list[str]:
                 sorted(
                     item.relative_to(repo_root).as_posix()
                     for item in path.rglob("*")
-                    if item.is_file()
+                    if package_file(item)
                 )
             )
         elif path.is_file():
             files.append(relative_path)
+    files.extend(
+        item.relative_to(repo_root).as_posix()
+        for item in repo_root.iterdir()
+        if package_file(item) and item.suffix.lower() in {".zsh", ".bat"}
+    )
     return sorted(dict.fromkeys(files))
 
 

@@ -9,11 +9,14 @@ builds a zip artifact from the committed `HEAD` snapshot and writes it to:
 dist/occs-cli-<version>-<timestamp>-<commit>.zip
 ```
 
-The artifact contains the CLI package files:
+The artifact contains the CLI package, supporting scripts, examples, hook, and documentation:
 
 * `bin/`
 * `lib/`
-* `README.md`
+* `tools/` and `.githooks/`
+* Every root-level `.zsh` and `.bat` runner, including the smoke-test and smoke-comparison runners
+* `README.md`, `BUILD.md`, `NOTES.MD`, `quickstart.txt`, and `docs/`
+* `examples/` and `.occs-cli-build.local.json.example`
 * `package.json`
 * `package-lock.json`
 * `BUILD_INFO.txt`

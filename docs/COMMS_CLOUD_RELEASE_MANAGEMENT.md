@@ -105,6 +105,17 @@ occs smoke --suite ./smoke-suite.json --tenancy pre-prod --output ./smoke-output
 
 Do not use `--resume` when a fresh post-deployment render is required; run the command without it. The new timestamped output directory provides an independent record of that rerun.
 
+### Statement convenience runners
+
+The checkout includes separate runners for the statement suite so that a normal smoke check is not confused with a visual comparison:
+
+| Check | macOS | Windows | Default target(s) |
+| --- | --- | --- | --- |
+| Single-environment statement smoke test | `./run-smoke-stmt.zsh` | `run-smoke-stmt.bat` | `non-prod` |
+| Statement comparison | `./run-smoke-compare-stmt.zsh` | `run-smoke-compare-stmt.bat` | `non-prod` → `pre-prod` |
+
+Both runners use `smoke-statements.json` beneath the statement samples directory. Set `OCCS_SAMPLES_DIR` or `OCCS_SMOKE_SUITE` if it has moved. Set `OCCS_SMOKE_TARGET` for the single-environment runner, or `OCCS_COMPARE_SOURCE` and `OCCS_COMPARE_TARGET` for the comparison runner. Each forwards `--resume` and other smoke options.
+
 ## Compare two environments
 
 Use compare mode to validate a release target against a reference environment, such as Non-Prod versus Pre-Prod.
@@ -117,7 +128,7 @@ occs smoke \
   --output ./smoke-output-non-prod-vs-pre-prod
 ```
 
-The report shows a thumbnail from each environment, separate generation status, and a comparison result.
+The report shows a thumbnail from each environment, the input filename, PDF page count, separate generation status, and a comparison result.
 
 | Comparison result | Meaning | Release action |
 | --- | --- | --- |
@@ -161,7 +172,7 @@ Each run creates the following artifacts in its new date/time-stamped output dir
 | `smoke-email.html` | HTML version of the release email. |
 | `smoke-email.eml` | Unsent email draft with embedded thumbnails. |
 
-Open `smoke-report.html` to review the results. Its heading identifies the tested environment and generation time. For a comparison, it identifies the comparison target environment and includes separate generation and visual-comparison counts. Open `smoke-email.eml` in Mail or Outlook, add recipients and any release context, then send it manually after review. The draft subject follows this pattern:
+Open `smoke-report.html` to review the results. Its heading identifies the tested environment and generation time. Each result identifies the input file and lists the page count for generated PDFs. For a comparison, it identifies the comparison target environment and includes separate generation and visual-comparison counts. Open `smoke-email.eml` in Mail or Outlook, add recipients and any release context, then send it manually after review. The draft subject follows this pattern:
 
 ```text
 Comms Cloud > <Environment> Smoke Test > <date and time>
