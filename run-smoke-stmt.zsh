@@ -8,6 +8,8 @@ CLI_ROOT="${0:A:h}"
 SAMPLES_DIR="${OCCS_SAMPLES_DIR:-/Users/clittle/Library/CloudStorage/OneDrive-OracleCorporation/Project Repository/400243832 - Example CCS Implementation/working/samples/statement}"
 SUITE_FILE="${OCCS_SMOKE_SUITE:-$SAMPLES_DIR/smoke-statements.json}"
 SMOKE_TARGET="${OCCS_SMOKE_TARGET:-non-prod}"
+COMPARE_SOURCE="${OCCS_COMPARE_SOURCE:-non-prod}"
+COMPARE_TARGET="${OCCS_COMPARE_TARGET:-pre-prod}"
 REQUEST_TIMEOUT="${OCCS_SMOKE_TIMEOUT:-60000}"
 EXTRA_SMOKE_ARGS=("$@")
 
@@ -25,4 +27,13 @@ node "$CLI_ROOT/bin/occs.js" smoke \
   --timeout "$REQUEST_TIMEOUT" \
   "${EXTRA_SMOKE_ARGS[@]}"
 
-print "\nSmoke runs complete. Each command prints its timestamped output folder."
+print "\n=== Smoke comparison: $COMPARE_SOURCE vs $COMPARE_TARGET ==="
+node "$CLI_ROOT/bin/occs.js" smoke \
+  --suite "$SUITE_FILE" \
+  --tenancy "$COMPARE_SOURCE" \
+  --compare-tenancy "$COMPARE_TARGET" \
+  --output "$SAMPLES_DIR/smoke-output-$COMPARE_SOURCE-vs-$COMPARE_TARGET" \
+  --timeout "$REQUEST_TIMEOUT" \
+  "${EXTRA_SMOKE_ARGS[@]}"
+
+print "\nSmoke runs complete."
