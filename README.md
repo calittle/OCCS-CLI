@@ -370,7 +370,7 @@ Run it with:
 occs smoke --suite ./smoke-suite.json --output ./smoke-output
 ```
 
-Each entry may include `"renderTypes": ["PDF", "HTML"]`; PDF is the default. Use `--tenancy non-prod` to override the suite target. Every new run writes to a date/time-stamped output folder (for example, `smoke-output-2026-08-25_14-30-15-123`) so earlier results are retained. Add `--resume` to reuse the most recent matching output folder and render only missing entries. The run writes `smoke-results.json`, rendered files under `previews/`, PDF first-page PNGs under `thumbnails/`, a browser report (`smoke-report.html`), and two email draft artifacts: `smoke-email.html` and `smoke-email.eml`. Open the `.eml` file in Outlook to review or edit the message, then send it yourself if appropriate.
+Each entry may include `"renderTypes": ["PDF", "HTML"]`; PDF is the default. Use `--tenancy non-prod` to override the suite target. Every new run writes to a date/time-stamped output folder (for example, `smoke-output-2026-08-25_14-30-15-123`) so earlier results are retained. Add `--resume` to reuse the most recent matching output folder: successful non-empty outputs are retained, while missing or failed previews are retried. In comparison mode, this applies independently to each environment. The run writes `smoke-results.json`, rendered files under `previews/`, PDF first-page PNGs under `thumbnails/`, a browser report (`smoke-report.html`), and two email draft artifacts: `smoke-email.html` and `smoke-email.eml`. The report and email begin with the environment, generation counts, and—when comparing environments—visual-comparison pass, review, and failure counts. Open the `.eml` file in Outlook to review or edit the message, then send it yourself if appropriate.
 
 To compare two targets side by side, add a second target:
 
@@ -379,6 +379,20 @@ occs smoke --suite ./smoke-suite.json --tenancy non-prod --compare-tenancy pre-p
 ```
 
 Both environments must generate a PDF for the comparison to run. The report shows a thumbnail for each target, a separate render result for each, and a comparison result: **Pass**, **Review**, or **N/A**. It rasterizes every PDF page and ignores small anti-aliasing differences (3% pixel fuzz). A comparison passes when the most different page has no more than 1% changed pixels; change that tolerance with `--compare-threshold 0.02`. Review cases retain a visual difference image under `comparisons/`.
+
+To run both the regular smoke test and the Non-Prod-to-Pre-Prod comparison from this checkout on macOS, use:
+
+```zsh
+./run-smoke-tests.zsh
+```
+
+Pass `--resume` to retry only failed or missing outputs in the most recent runs:
+
+```zsh
+./run-smoke-tests.zsh --resume
+```
+
+The script defaults to the configured samples folder. Override it with `OCCS_SAMPLES_DIR=/path/to/samples` when the suite has moved.
 
 #### condition-check
 

@@ -97,7 +97,7 @@ A smoke result is:
 - **Pass** — the selected environment returned a non-empty output for the requested format.
 - **Fail** — input conversion, authentication, package preview, timeout, or output generation failed.
 
-If a run was interrupted after some previews completed, use `--resume` with the same output base. OCCS CLI selects the most recent matching date/time-stamped run directory, retains its existing non-empty outputs, and renders only missing tests:
+To retry a run without re-requesting successful previews, use `--resume` with the same output base. OCCS CLI selects the most recent matching date/time-stamped run directory, retains its existing non-empty outputs, and retries only missing or failed previews. In a comparison run, it does this independently for each environment:
 
 ```sh
 occs smoke --suite ./smoke-suite.json --tenancy pre-prod --output ./smoke-output-pre-prod --resume
@@ -161,13 +161,13 @@ Each run creates the following artifacts in its new date/time-stamped output dir
 | `smoke-email.html` | HTML version of the release email. |
 | `smoke-email.eml` | Unsent email draft with embedded thumbnails. |
 
-Open `smoke-report.html` to review the results. Open `smoke-email.eml` in Mail or Outlook, add recipients and any release context, then send it manually after review. The draft subject follows this pattern:
+Open `smoke-report.html` to review the results. Its heading identifies the tested environment and generation time. For a comparison, it identifies the comparison target environment and includes separate generation and visual-comparison counts. Open `smoke-email.eml` in Mail or Outlook, add recipients and any release context, then send it manually after review. The draft subject follows this pattern:
 
 ```text
 Comms Cloud > <Environment> Smoke Test > <date and time>
 ```
 
-The email includes the generation counts, comparison counts, and a short explanation of the comparison tolerance.
+The email includes generation counts and, for a comparison, visual-comparison pass, review, and failure counts.
 
 ## Using ATool and OCCS CLI for Config ID closure and migration
 
