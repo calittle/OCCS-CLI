@@ -53,6 +53,9 @@ The compare mode is particularly useful immediately after Non-Production to Pre-
 
 3. Keep a small, representative set of JSON or XML inputs. Each input should represent a meaningful communication path, rather than every possible scenario.
 4. Confirm the communication package short name for each input.
+5. Install the local PDF utilities used by the smoke command: Poppler (`pdftoppm` and `pdfinfo`) is required for thumbnails and PDF page counts. For two-environment visual comparison, also install ImageMagick (`identify` and `compare`). Ensure these commands are on `PATH` before running the suite.
+
+On macOS, install them with `brew install poppler imagemagick`; on Ubuntu/Debian, use `sudo apt install poppler-utils imagemagick`. On Windows, install both tools and add their executable directories to `PATH`. Confirm the installation with `pdftoppm -v`, `pdfinfo -v`, and, when comparing environments, `identify -version` and `compare -version`.
 
 For the Example bill suite, the representative bill samples are RT, NRT, BULK, and PLT. Letter and eBill inputs cover their respective packages.
 
@@ -324,7 +327,9 @@ For each Config ID movement, capture:
 | One sample fails | Open its full preview and any error sidecar under `previews/`; verify the package name and sample payload. |
 | Comparison is N/A | Confirm that both targets generated a PDF. HTML-only tests cannot be visually compared by this command. |
 | Comparison is Review | Open the matching image under `comparisons/<test-id>/diff-page-<n>.png`; check whether the output change is expected before changing the threshold. |
-| Email thumbnails do not display | Regenerate the run with the current OCCS CLI version. The `.eml` draft embeds thumbnails as inline images. |
+| No thumbnails or PDF page counts | Install Poppler and ensure `pdftoppm` and `pdfinfo` are on `PATH`. Verify with `pdftoppm -v` and `pdfinfo -v`, then run the suite again. |
+| Comparison is Review with a rendered-page-count warning | Install ImageMagick and ensure `identify` and `compare` are on `PATH`, then run the comparison again. |
+| Email thumbnails do not display | Confirm PNG files were generated under `thumbnails/`; then regenerate the run with the current OCCS CLI version. The `.eml` draft embeds those images inline. |
 
 ## Oracle reference material
 

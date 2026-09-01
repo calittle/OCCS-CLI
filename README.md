@@ -11,19 +11,24 @@ This CLI tool requires:
 * Node.js (v18+ recommended)
 * npm (bundled with Node.js)
 * Graphviz (dot command) – required to generate .svg graphs
+* Poppler (`pdftoppm` and `pdfinfo`) – required for PDF smoke-test thumbnails and page counts
+* ImageMagick (`identify` and `compare`) – required only for visual comparison in two-tenancy smoke tests
 
 ### macOs
 Use brew to install prerequisites.
-`brew install node graphviz`
+`brew install node graphviz poppler imagemagick`
 
 ### Ubuntu
-`sudo apt update && sudo apt install nodejs npm graphviz`
+`sudo apt update && sudo apt install nodejs npm graphviz poppler-utils imagemagick`
 
 ### Windows
 1. Download the [NodeJS Installer](https://nodejs.org) and run it.
 1.	Download the [Installer](https://graphviz.org/download)
 2. 	Run the Installer and use default options, ensure Graphviz is added to the system path. 
-3.	Verify Installation by running at the command prompt: `dot -V`
+3. Install Poppler and ImageMagick, and add the folders containing their executables to the system `PATH`.
+4.	Verify Installation by running at the command prompt: `dot -V`, `pdftoppm -v`, `pdfinfo -v`, and (for two-tenancy visual comparisons) `identify -version` and `compare -version`.
+
+`npm install` installs JavaScript dependencies only. It does not install Graphviz, Poppler, or ImageMagick, because they are operating-system tools.
 
 
 ## Installation
