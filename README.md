@@ -516,7 +516,7 @@ Options can be combined.
 
 #### mockup
 
-Generate a standalone interactive document inspector from a cache refreshed with `get-everything`. The generator always resolves the highest cached semantic version of the document and every reachable content blob. It writes an HTML page and a sibling normalized JSON model.
+Generate a standalone interactive document inspector from a cache refreshed with `get-everything`. The generator always resolves the highest cached semantic version of the document and every reachable content blob. The complete inspector data model is embedded in the HTML, so the output is portable as a single file.
 
 `occs mockup CO-G1-CO1 --cache ./comms_cache --package example_bills --output ./output/CO-G1-CO1-inspector.html`
 
