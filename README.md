@@ -514,6 +514,14 @@ Options can be combined.
 * `-f,--fields`: Include fields (Note this may clutter the graph), e.g. `occs-cli graph -d CO-G1-CO1 -f`
 * `--all-versions`: Include all resource versions in graph output (default is latest version per resource)
 
+#### mockup
+
+Generate a standalone interactive document inspector from a cache refreshed with `get-everything`. The generator always resolves the highest cached semantic version of the document and every reachable content blob. It writes an HTML page and a sibling normalized JSON model.
+
+`occs mockup CO-G1-CO1 --cache ./comms_cache --package example_bills --output ./output/CO-G1-CO1-inspector.html`
+
+Use `--package` when the document belongs to a package so the inspector can include the Assembly Template's document condition.
+
 
 # File Structure
 ```

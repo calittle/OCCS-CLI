@@ -12,6 +12,7 @@ import { packageGetCommand, packageListCommand, packageSaveCommand } from '../li
 import { catalogCommand } from '../lib/catalog.js';
 import { crossrefCommand } from '../lib/crossRef.js';
 import { graphCommand } from '../lib/graph.js';
+import { mockupCommand } from '../lib/mockup.js';
 import { listCompaniesCommand } from '../lib/companies.js';
 import { listConfigsCommand } from '../lib/configs.js';
 import { preflightCommand } from '../lib/preflight.js';
@@ -385,6 +386,14 @@ program
   .option('-f,--fields', 'Include Fields in graph - WARNING: may produce a busy graph.')
   .option('--all-versions', 'Include all versions (default shows latest version per resource)')
   .action(graphCommand);
+
+program
+  .command('mockup <document>')
+  .description('Generate an interactive document inspector from the latest versions in a refreshed local comms cache')
+  .option('-c, --cache <dir>', 'Comms cache directory', './comms_cache')
+  .option('-p, --package <name>', 'Package that contains the document (adds Assembly Template condition context)')
+  .option('-o, --output <file>', 'Output HTML file (a sibling JSON model is also written)')
+  .action(mockupCommand);
 
 
 program
