@@ -388,11 +388,12 @@ program
   .action(graphCommand);
 
 program
-  .command('mockup <document>')
+  .command('mockup [document]')
   .description('Generate an interactive document inspector from the latest versions in a refreshed local comms cache')
   .option('-c, --cache <dir>', 'Comms cache directory', './comms_cache')
   .option('-p, --package <name>', 'Package that contains the document (adds Assembly Template condition context)')
-  .option('-o, --output <file>', 'Output HTML file (a sibling JSON model is also written)')
+  .option('--all', 'Generate every cached document in the package')
+  .option('-o, --output <file>', 'Output HTML file (or output directory with --all)')
   .action(mockupCommand);
 
 

@@ -522,6 +522,12 @@ Generate a standalone interactive document inspector from a cache refreshed with
 
 Use `--package` when the document belongs to a package so the inspector can include the Assembly Template's document condition.
 
+Generate every cached document referenced by the latest package Assembly Template:
+
+`occs mockup --package example_bills --all --cache ./comms_cache`
+
+With `--all`, output defaults to `./comms_cache/mockups/example_bills/`. If supplied, `--output` is an output directory rather than an HTML filename.
+
 
 # File Structure
 ```
