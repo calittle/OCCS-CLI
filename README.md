@@ -151,6 +151,8 @@ Examples:
 
 The current session is used by commands when no explicit `--session` or target selector is provided.
 
+Artifact downloads automatically retry transient CCS server responses (`5xx`, including `502`) up to three times, with 1- and 2-second backoff delays. Requests that still fail, and non-retryable responses such as `404`, are retained in the command's grouped failure report at the end of the run.
+
 #### get-everything
 Downloads all CCS data including packages, documents, layouts, contents, styles, fonts, and chart artifacts.
 
