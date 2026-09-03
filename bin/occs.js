@@ -7,6 +7,7 @@ import { listPackagesCommand } from '../lib/packages.js';
 import { listLayoutsCommand } from '../lib/layouts.js';
 import { listContentsCommand } from '../lib/contents.js';
 import { listStylesCommand } from '../lib/styles.js';
+import { listChartsCommand } from '../lib/charts.js';
 import { listFontsCommand } from '../lib/fonts.js';
 import { packageGetCommand, packageListCommand, packageSaveCommand } from '../lib/packageMaintenance.js';
 import { catalogCommand } from '../lib/catalog.js';
@@ -423,6 +424,7 @@ program
     await listContentsCommand(cmd);
     const fonts = await listFontsCommand(cmd);
     await listStylesCommand(cmd);
+    await listChartsCommand(cmd);
     if (fonts?.ok === false) {
       console.error("⚠ Export completed with font download failures. Run `occs list-fonts` later to retry only missing font files.");
       process.exitCode = 1;
@@ -491,6 +493,13 @@ program
   .option('-o, --output <dir>', 'Output directory to dump style data')
   .option('-v, --verbose', 'Verbose logging')
   .action(listStylesCommand);
+
+program
+  .command('list-charts')
+  .description('List chart artifacts from Oracle CCS')
+  .option('-o, --output <dir>', 'Output directory to dump chart data')
+  .option('-v, --verbose', 'Verbose logging')
+  .action(listChartsCommand);
 
 program
   .command('list-documents')

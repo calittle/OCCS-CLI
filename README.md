@@ -86,6 +86,7 @@ occs graph
 1. `list-packages [options]`   List communication packages from Oracle CCS
 1. `list-fonts [options]`      List fonts from Oracle CCS
 1. `list-styles [options]`     List communication styles from Oracle CCS
+1. `list-charts [options]`     List chart artifacts from Oracle CCS
 1. `list-documents [options]`  List documents from Oracle CCS
 1. `list-layouts [options]`    List layouts from Oracle CCS
 1. `list-contents [options]`   List contents from Oracle CCS
@@ -151,11 +152,17 @@ Examples:
 The current session is used by commands when no explicit `--session` or target selector is provided.
 
 #### get-everything
-Downloads all CCS data including packages, documents, layouts, contents, styles, and fonts.
+Downloads all CCS data including packages, documents, layouts, contents, styles, fonts, and chart artifacts.
 
 `occs-cli get-everything`
 
 The export is recoverable if a font file cannot be retrieved: all metadata and every successfully downloaded file remain in place, styles are still exported, and a later `occs list-fonts` retries only missing font files. A failed font file is reported at the end and causes a non-zero exit code so unattended jobs can still detect the incomplete export.
+
+#### list-charts
+
+Downloads chart master records, versions, and their expanded series, categories, axes, and annotations. Each expanded artifact retains its CCS communication-style association records, whose referenced style JSON is downloaded by `list-styles` (and therefore `get-everything`).
+
+`occs list-charts --output ./output/charts`
 
 #### package
 
@@ -560,6 +567,14 @@ output/
   |      +- <font name>/
   |              + <font>.ttf
   |              + <font name>.json (Font record from CCS)
+  +- charts/
+  |      +- <chart>/
+  |            + chart.json (Chart list record from CCS)
+  |            + <chart>_master.json (Chart master record from CCS)
+  |            +- versions/
+  |                  +- <version>/
+  |                        + <version>.json (Expanded chart version, including style associations)
+  |                        +- series/, categories/, category-axes/, series-axes/, annotations/
   +- catalog/
   |      + contents.csv (list of contents)
   |      + documents.csv (list of documents)
