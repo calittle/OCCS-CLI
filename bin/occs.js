@@ -2,13 +2,13 @@
 import { Command } from 'commander';
 import { spawn, spawnSync } from 'child_process';
 import loginCommand from '../lib/auth.js';
-import { documentCatalogCommand, listDocumentsCommand } from '../lib/documents.js';
-import { listPackagesCommand } from '../lib/packages.js';
-import { listLayoutsCommand } from '../lib/layouts.js';
-import { listContentsCommand } from '../lib/contents.js';
-import { listStylesCommand } from '../lib/styles.js';
-import { listChartsCommand } from '../lib/charts.js';
-import { listFontsCommand } from '../lib/fonts.js';
+import { documentCatalogCommand, getDocumentCommand, listDocumentsCommand } from '../lib/documents.js';
+import { getPackageCommand, listPackagesCommand } from '../lib/packages.js';
+import { getLayoutCommand, listLayoutsCommand } from '../lib/layouts.js';
+import { getContentCommand, listContentsCommand } from '../lib/contents.js';
+import { getStyleCommand, listStylesCommand } from '../lib/styles.js';
+import { getChartCommand, listChartsCommand } from '../lib/charts.js';
+import { getFontCommand, listFontsCommand } from '../lib/fonts.js';
 import { packageGetCommand, packageListCommand, packageSaveCommand } from '../lib/packageMaintenance.js';
 import { catalogCommand } from '../lib/catalog.js';
 import { crossrefCommand } from '../lib/crossRef.js';
@@ -478,6 +478,23 @@ program
   .option('-o, --output <dir>', 'Output directory to dump package data')
   .option('-v, --verbose', 'Verbose logging')
   .action(listPackagesCommand);
+
+for (const [name, description, action] of [
+  ['get-package', 'Download one communication package and all active versions', getPackageCommand],
+  ['get-document', 'Download one communication document and all active versions', getDocumentCommand],
+  ['get-layout', 'Download one communication layout and all active versions', getLayoutCommand],
+  ['get-content', 'Download one communication content item and all active versions', getContentCommand],
+  ['get-font', 'Download one communication font', getFontCommand],
+  ['get-style', 'Download one communication style', getStyleCommand],
+  ['get-chart', 'Download one chart artifact and all active versions', getChartCommand],
+]) {
+  program
+    .command(`${name} <shortName>`)
+    .description(description)
+    .option('-o, --output <dir>', 'Output directory')
+    .option('-v, --verbose', 'Verbose logging')
+    .action(action);
+}
 
 program
   .command('list-fonts')

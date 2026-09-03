@@ -164,6 +164,24 @@ Downloads chart master records, versions, and their expanded series, categories,
 
 `occs list-charts --output ./output/charts`
 
+#### Targeted artifact downloads
+
+Download one exact artifact by CCS short name without exporting every artifact of
+that type.  Package, document, content, and chart downloads retain every active
+version returned by the corresponding CCS master resource.
+
+* `occs get-package example_bills --output ./output/packages`
+* `occs get-document CO-G1-CO1 --output ./output/documents`
+* `occs get-layout Letter_Header --output ./output/layouts`
+* `occs get-content Welcome_Text --output ./output/contents`
+* `occs get-font CorporateSans --output ./output/fonts`
+* `occs get-style Standard_Body --output ./output/styles`
+* `occs get-chart Monthly_Sales --output ./output/charts`
+
+The name must match an artifact short name exactly (case-insensitively). The CLI
+uses a server-side short-name search to avoid downloading unrelated artifacts,
+then rejects partial or ambiguous matches.
+
 #### package
 
 Maintain communication packages with a small ATool-friendly command surface.
