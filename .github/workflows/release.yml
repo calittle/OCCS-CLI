@@ -47,6 +47,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release view "$TAG" --json assets --jq '.assets[].name | select(endswith(".zip"))' \
+              | while IFS= read -r asset; do
+                  gh release delete-asset "$TAG" "$asset" --yes
+                done
             gh release upload "$TAG" dist/*.zip --clobber
           else
             gh release create "$TAG" dist/*.zip --title "OCCS CLI $TAG" --generate-notes
