@@ -1,5 +1,13 @@
 # OCCS CLI
-* Author andy.little@oracle.com
+
+> ## UNSUPPORTED — NOT AN ORACLE PRODUCT
+>
+> This is an independent open-source utility. It is not an Oracle product and
+> is not supported, endorsed, maintained, or warranted by Oracle. Use it at
+> your own risk; obtain support for Oracle products through Oracle's official
+> support channels.
+
+Licensed under the [GNU General Public License, version 3](LICENSE).
 
 
 Oracle CCS CLI utility to interact with and analyze components from Oracle's Communication Cloud Service (CCS). This tool allows you to retrieve, catalog, cross-reference, and visualize element relationships using GraphViz-compatible `.dot` and `.svg` output.

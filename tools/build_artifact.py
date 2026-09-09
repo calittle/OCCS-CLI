@@ -19,6 +19,7 @@ PACKAGE_PATHS = (
     "bin",
     "lib",
     "README.md",
+    "LICENSE",
     "BUILD.md",
     "NOTES.MD",
     "quickstart.txt",

@@ -9,7 +9,8 @@
   "files": [
     "bin",
     "lib",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "dependencies": {
     "@viz-js/viz": "^3.19.0",
@@ -31,6 +32,6 @@
   },
   "keywords": [],
   "author": "andy.little@oracle.com",
-  "license": "ISC",
-  "description": "Oracle Communication Cloud Service CLI"
+  "license": "GPL-3.0-only",
+  "description": "Unofficial, unsupported Oracle Communication Cloud Service CLI"
 }
