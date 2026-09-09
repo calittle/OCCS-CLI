@@ -145,6 +145,7 @@ program
   .version(CLI_VERSION)
   .option('--notify', 'Show a desktop notification and play a sound after successful command execution')
   .option('--pretty', 'Pretty-print JSON output and preserve JSON string whitespace')
+  .option('--concurrency <n>', 'Maximum concurrent OCCS export requests (default 4)', '4')
   .option('--timeout <ms>', `Default HTTP request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`);
 
 program.hook('preAction', (_thisCommand, actionCommand) => {
@@ -308,6 +309,7 @@ program
   .option('-r, --render-type <type...>', 'Default render types for tests without renderTypes (PDF, HTML)', ['PDF'])
   .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD)')
   .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('--concurrency <n>', 'Maximum simultaneous primary/comparison previews (default 2)', '2')
   .option('-v, --verbose', 'Include preview request detail')
   .action(smokeCommand);
 
