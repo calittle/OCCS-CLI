@@ -1,6 +1,4 @@
 # OCCS CLI
-* Version 0.1.0
-* Release Date 1 October 2025
 * Author andy.little@oracle.com
 
 
