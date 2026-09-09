@@ -35,8 +35,8 @@ Run the same suite at both points, but use the results for different decisions:
 | Timing | Target | What it establishes | Release decision supported |
 | --- | --- | --- | --- |
 | **Before movement** | Source tenancy, normally Non-Production | The selected representative communications currently render successfully before their configuration is promoted. | Establishes a known-good reference and prevents promoting an already-broken configuration. |
-| **After Non-Prod → Pre-Prod movement** | Pre-Production, compared with Non-Production | The moved configuration is present and operational in the isolated target; comparison highlights unexpected visual change. | Supports isolation-test approval and readiness to move toward Production. |
-| **Before Pre-Prod → Production movement** | Pre-Production | The approved, frozen configuration still renders in the final pre-production stage. | Provides final evidence before requesting or initiating production movement. |
+| **After source → target movement** | Target environment, compared with source environment | The moved configuration is present and operational in the isolated target; comparison highlights unexpected visual change. | Supports isolation-test approval and readiness to move toward Production. |
+| **Before target → Production movement** | Target environment | The approved, frozen configuration still renders in the final pre-production stage. | Provides final evidence before requesting or initiating production movement. |
 | **After Production movement** | Production, where release controls permit it | The production tenant can assemble the representative outputs. | Confirms operational readiness; use a safe test-data and access process appropriate to Production. |
 
 The compare mode is particularly useful immediately after Non-Production to Pre-Production movement. It separates two questions: whether both tenants generated an output, and whether the rendered result is generally the same. A visual **Review** is evidence to inspect—not an automatic release failure—because an intended configuration change can legitimately alter the output.
@@ -47,8 +47,8 @@ The compare mode is particularly useful immediately after Non-Production to Pre-
 2. Create saved sessions for the environments you will use. For example:
 
    ```sh
-   occs login -c examplecustomer -r example-region -t non-prod
-   occs login -c examplecustomer -r example-region -t pre-prod
+   occs login -c examplecustomer -r example-region -t <source-tenancy>
+   occs login -c examplecustomer -r example-region -t <target-tenancy>
    ```
 
 3. Keep a small, representative set of JSON or XML inputs. Each input should represent a meaningful communication path, rather than every possible scenario.
@@ -66,7 +66,7 @@ Create a JSON suite file alongside the sample inputs. Input paths are resolved r
 ```json
 {
   "name": "Example release smoke",
-  "tenancy": "pre-prod",
+  "tenancy": "<target-tenancy>",
   "tests": [
     { "id": "bill-rt", "type": "Bill RT", "package": "example_bills", "input": "bill-RT.json" },
     { "id": "bill-nrt", "type": "Bill NRT", "package": "example_bills", "input": "bill-NRT.json" },
@@ -86,13 +86,13 @@ PDF is the default render type and is recommended for release checks because it 
 
 ## Run a single-environment smoke check
 
-Run the suite against the release target. `--output` is a base directory name: OCCS CLI appends a local date/time suffix for every new run, preserving earlier release evidence automatically. For example, `--output ./smoke-output-pre-prod` creates a run directory such as `smoke-output-pre-prod-2026-08-25_14-30-15-123`.
+Run the suite against the release target. `--output` is a base directory name: OCCS CLI appends a local date/time suffix for every new run, preserving earlier release evidence automatically. For example, `--output ./smoke-output-target` creates a run directory such as `smoke-output-target-2026-08-25_14-30-15-123`.
 
 ```sh
 occs smoke \
   --suite ./smoke-suite.json \
-  --tenancy pre-prod \
-  --output ./smoke-output-pre-prod
+  --tenancy <target-tenancy> \
+  --output ./smoke-output-target
 ```
 
 A smoke result is:
@@ -103,7 +103,7 @@ A smoke result is:
 To retry a run without re-requesting successful previews, use `--resume` with the same output base. OCCS CLI selects the most recent matching date/time-stamped run directory, retains its existing non-empty outputs, and retries only missing or failed previews. In a comparison run, it does this independently for each environment:
 
 ```sh
-occs smoke --suite ./smoke-suite.json --tenancy pre-prod --output ./smoke-output-pre-prod --resume
+occs smoke --suite ./smoke-suite.json --tenancy <target-tenancy> --output ./smoke-output-target --resume
 ```
 
 Do not use `--resume` when a fresh post-deployment render is required; run the command without it. The new timestamped output directory provides an independent record of that rerun.
@@ -114,21 +114,21 @@ The checkout includes separate runners for the statement suite so that a normal 
 
 | Check | macOS | Windows | Default target(s) |
 | --- | --- | --- | --- |
-| Single-environment statement smoke test | `./run-smoke-stmt.zsh` | `run-smoke-stmt.bat` | `non-prod` |
-| Statement comparison | `./run-smoke-compare-stmt.zsh` | `run-smoke-compare-stmt.bat` | `non-prod` → `pre-prod` |
+| Single-environment statement smoke test | `./run-smoke-stmt.zsh` | `run-smoke-stmt.bat` | `<source-tenancy>` |
+| Statement comparison | `./run-smoke-compare-stmt.zsh` | `run-smoke-compare-stmt.bat` | `<source-tenancy>` → `<target-tenancy>` |
 
 Both runners use `smoke-statements.json` beneath the statement samples directory. Set `OCCS_SAMPLES_DIR` or `OCCS_SMOKE_SUITE` if it has moved. Set `OCCS_SMOKE_TARGET` for the single-environment runner, or `OCCS_COMPARE_SOURCE` and `OCCS_COMPARE_TARGET` for the comparison runner. Each forwards `--resume` and other smoke options.
 
 ## Compare two environments
 
-Use compare mode to validate a release target against a reference environment, such as Non-Prod versus Pre-Prod.
+Use compare mode to validate a release target against a reference environment.
 
 ```sh
 occs smoke \
   --suite ./smoke-suite.json \
-  --tenancy non-prod \
-  --compare-tenancy pre-prod \
-  --output ./smoke-output-non-prod-vs-pre-prod
+  --tenancy <source-tenancy> \
+  --compare-tenancy <target-tenancy> \
+  --output ./smoke-output-source-vs-target
 ```
 
 The report shows a thumbnail from each environment, the input filename, PDF page count, separate generation status, and a comparison result.
@@ -153,10 +153,10 @@ The default pass threshold is 1% changed pixels. Adjust it only when you have es
 ```sh
 occs smoke \
   --suite ./smoke-suite.json \
-  --tenancy non-prod \
-  --compare-tenancy pre-prod \
+  --tenancy <source-tenancy> \
+  --compare-tenancy <target-tenancy> \
   --compare-threshold 0.02 \
-  --output ./smoke-output-non-prod-vs-pre-prod
+  --output ./smoke-output-source-vs-target
 ```
 
 `0.02` means 2%. A Review result is not automatically a release failure; it is a prompt for a human to check the output and approve or investigate the change.
@@ -227,10 +227,10 @@ Then perform a fresh source-tenancy smoke run and retain its artifacts. This is 
 occs preflight --config-id <CONFIG_ID>
 
 # Validate the intended Config ID without changing it.
-occs close-config <CONFIG_ID> --session non-prod --dry-run
+occs close-config <CONFIG_ID> --session <source-tenancy> --dry-run
 
 # Close it after approval.
-occs close-config <CONFIG_ID> --session non-prod
+occs close-config <CONFIG_ID> --session <source-tenancy>
 ```
 
 Closing freezes the Config ID for movement. Oracle documents that a closed Config ID cannot be reopened; treat the `--dry-run` and release review as mandatory safeguards. [Oracle closing guidance](https://docs.oracle.com/en/industries/financial-services/financial-services-cloud/oracle_financialservices_platform/closing-config-id.html)
@@ -251,13 +251,13 @@ Configuration Movement is initiated from the **target** tenancy. For a Non-Produ
 
 ```sh
 # Inspect the target's eligible Config IDs without initiating movement.
-occs migrate --source-session non-prod --target-tenancy pre-prod --dry-run
+occs migrate --source-session <source-tenancy> --target-tenancy <target-tenancy> --dry-run
 
 # Optional sanity check: verify a named Config ID is eligible.
-occs migrate <CONFIG_ID> --source-session non-prod --target-tenancy pre-prod --dry-run
+occs migrate <CONFIG_ID> --source-session <source-tenancy> --target-tenancy <target-tenancy> --dry-run
 
 # Initiate the eligible movement after approval.
-occs migrate --source-session non-prod --target-tenancy pre-prod
+occs migrate --source-session <source-tenancy> --target-tenancy <target-tenancy>
 ```
 
 Passing `<CONFIG_ID>` is a safeguard, not a selective migration mechanism: OCCS CLI verifies that it is eligible, but the Comms movement endpoint initiates movement for the full eligible set. Record the dry-run output in the release evidence.
@@ -323,7 +323,7 @@ For each Config ID movement, capture:
 
 | Symptom | Check |
 | --- | --- |
-| Saved-session error | Run `occs sessions`; use `--tenancy non-prod` / `--tenancy pre-prod`, or provide the exact saved session key with `--session`. |
+| Saved-session error | Run `occs sessions`; use `--tenancy <source-tenancy>` / `--tenancy <target-tenancy>`, or provide the exact saved session key with `--session`. |
 | One sample fails | Open its full preview and any error sidecar under `previews/`; verify the package name and sample payload. |
 | Comparison is N/A | Confirm that both targets generated a PDF. HTML-only tests cannot be visually compared by this command. |
 | Comparison is Review | Open the matching image under `comparisons/<test-id>/diff-page-<n>.png`; check whether the output change is expected before changing the threshold. |
