@@ -12,7 +12,7 @@ Communication output depends on a chain of configuration: package selection, doc
 
 A smoke test is a fast, repeatable operational check that asks a narrower question than full regression testing: **can each representative communication still assemble and render in this tenancy?** It provides early evidence that the release has not caused a catastrophic rendering failure. It also produces a small, reviewable record rather than requiring reviewers to reproduce each preview manually.
 
-The recommended sample set should cover the important package and condition branches. For example, the Example bill suite covers RT, NRT, BULK, and PLT alongside letter and eBill samples. Keep the suite deliberately small enough to run for every release, but broad enough to touch the communication families most affected by the change.
+The recommended sample set should cover the important package and condition branches. For example, the sample bill suite covers RT, NRT, BULK, and PLT alongside letter and eBill samples. Keep the suite deliberately small enough to run for every release, but broad enough to touch the communication families most affected by the change.
 
 ## Configuration lifecycle and migration context
 
@@ -57,7 +57,7 @@ The compare mode is particularly useful immediately after Non-Production to Pre-
 
 On macOS, install them with `brew install poppler imagemagick`; on Ubuntu/Debian, use `sudo apt install poppler-utils imagemagick`. On Windows, install both tools and add their executable directories to `PATH`. Confirm the installation with `pdftoppm -v`, `pdfinfo -v`, and, when comparing environments, `identify -version` and `compare -version`.
 
-For the Example bill suite, the representative bill samples are RT, NRT, BULK, and PLT. Letter and eBill inputs cover their respective packages.
+For the sample bill suite, the representative bill samples are RT, NRT, BULK, and PLT. Letter and eBill inputs cover their respective packages.
 
 ## Create a smoke suite
 

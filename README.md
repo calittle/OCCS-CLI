@@ -381,7 +381,7 @@ Create a suite JSON file. Input paths are relative to the suite file, so the sui
 
 ```json
 {
-  "name": "Example pre-prod smoke",
+  "name": "Example pre-production smoke",
   "tenancy": "pre-prod",
   "tests": [
     { "id": "bill-rt", "type": "Bill RT", "package": "example_bills", "input": "bill-RT.json" },
@@ -464,7 +464,7 @@ Optional:
 Condition evaluation is Comms-compatible for filtered `empty true` checks: if a filtered collection parent is missing, for example `billChars[?(...)]`, the check fails unless the condition explicitly guards the collection with a null/empty branch or the input emits an empty array.
 
 Example:
-* `occs condition-check -p ./example_bills.json -i ./66135.json --expect-doc CO-G1-CO23`
+* `occs condition-check -p ./example_bills.json -i ./66135.json --expect-doc EXAMPLE-DOC-23`
 
 Output includes:
 * Triggered `Documents[*].$$Id`
@@ -543,7 +543,7 @@ Options can be combined.
 
 Generate a standalone interactive document inspector from a cache refreshed with `get-everything`. The generator always resolves the highest cached semantic version of the document and every reachable content blob. The complete inspector data model is embedded in the HTML, so the output is portable as a single file.
 
-`occs mockup CO-G1-CO1 --cache ./comms_cache --package example_bills --output ./output/CO-G1-CO1-inspector.html`
+`occs mockup EXAMPLE-DOC-1 --cache ./comms_cache --package example_bills --output ./output/EXAMPLE-DOC-1-inspector.html`
 
 Use `--package` when the document belongs to a package so the inspector can include the Assembly Template's document condition.
 

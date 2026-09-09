@@ -1,5 +1,5 @@
 {
-  "name": "Example pre-prod smoke",
+  "name": "Example pre-production smoke",
   "tenancy": "pre-prod",
   "tests": [
     { "id": "bill-rt", "type": "Bill RT", "package": "example_bills", "input": "bill-RT.json" },

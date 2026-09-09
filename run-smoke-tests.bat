@@ -10,7 +10,7 @@ setlocal EnableExtensions
 
 set "CLI_ROOT=%~dp0"
 set "SAMPLES_DIR=%OCCS_SAMPLES_DIR%"
-if not defined SAMPLES_DIR set "SAMPLES_DIR=C:\Users\clittle\Library\CloudStorage\OneDrive-OracleCorporation\Project Repository\400243832 - Example CCS Implementation\working\samples"
+if not defined SAMPLES_DIR set "SAMPLES_DIR=%USERPROFILE%\occs-samples"
 set "SUITE_FILE=%OCCS_SMOKE_SUITE%"
 if not defined SUITE_FILE set "SUITE_FILE=%SAMPLES_DIR%\smoke-suite.json"
 set "SMOKE_TARGET=%OCCS_SMOKE_TARGET%"

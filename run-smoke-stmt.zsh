@@ -5,7 +5,7 @@
 set -euo pipefail
 
 CLI_ROOT="${0:A:h}"
-SAMPLES_DIR="${OCCS_SAMPLES_DIR:-/Users/clittle/Library/CloudStorage/OneDrive-OracleCorporation/Project Repository/400243832 - Example CCS Implementation/working/samples/statement}"
+SAMPLES_DIR="${OCCS_SAMPLES_DIR:-$HOME/occs-samples/statement}"
 SUITE_FILE="${OCCS_SMOKE_SUITE:-$SAMPLES_DIR/smoke-statements.json}"
 SMOKE_TARGET="${OCCS_SMOKE_TARGET:-non-prod}"
 COMPARE_SOURCE="${OCCS_COMPARE_SOURCE:-non-prod}"
