@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { spawn, spawnSync } from 'child_process';
+import { createRequire } from 'node:module';
 import loginCommand from '../lib/auth.js';
 import { documentCatalogCommand, getDocumentCommand, listDocumentsCommand } from '../lib/documents.js';
 import { getPackageCommand, listPackagesCommand } from '../lib/packages.js';
@@ -27,6 +28,8 @@ import { sessionsCommand, useSessionCommand } from '../lib/sessionCommands.js';
 import { setJsonPretty } from '../lib/utils.js';
 import { DEFAULT_REQUEST_TIMEOUT_MS, setDefaultRequestTimeoutMs } from '../lib/requestTimeout.js';
 
+const require = createRequire(import.meta.url);
+const { version: CLI_VERSION } = require('../package.json');
 const program = new Command();
 
 function spawnDetached(command, args) {
@@ -122,7 +125,7 @@ function showCompletionNotification(commandName, elapsedSeconds, context) {
 
 function showBanner() {
   console.log('');
-  console.log('OCCS CLI 1.0.0 🚀');
+  console.log(`OCCS CLI ${CLI_VERSION} 🚀`);
   console.log('');
 }
 
@@ -139,7 +142,7 @@ function collectCsvOption(value, previous = []) {
 program
   .name('occs')
   .description('Oracle CCS CLI utility')
-  .version('1.0.0')
+  .version(CLI_VERSION)
   .option('--notify', 'Show a desktop notification and play a sound after successful command execution')
   .option('--pretty', 'Pretty-print JSON output and preserve JSON string whitespace')
   .option('--timeout <ms>', `Default HTTP request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`);
