@@ -1,0 +1,40 @@
+name: Build main artifact
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Test and package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build distribution ZIP
+        run: npm run build:artifact
+
+      - name: Upload distribution ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: occs-cli-main-${{ github.sha }}
+          path: dist/*.zip
+          if-no-files-found: error
