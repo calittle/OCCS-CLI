@@ -561,6 +561,35 @@ Generate every cached document referenced by the latest package Assembly Templat
 
 With `--all`, output defaults to `./comms_cache/mockups/example_bills/`. If supplied, `--output` is an output directory rather than an HTML filename.
 
+#### Refresh cache and generate selected mockups
+
+The `examples/refresh-and-mockups.zsh` (macOS/Linux) and
+`examples/refresh-and-mockups.ps1` (Windows) scripts download a fresh cache,
+mirror it locally (pruning artifacts that no longer exist in CCS), and generate
+mockups. Both default to `CLP_bills`, `CLP_letters`, `CLP_braille`,
+`CLP_Emails`, and `CLP_statements`.
+
+Run the Zsh version from the directory where you want `comms-cache/` and
+`mockups/` created:
+
+```zsh
+zsh examples/refresh-and-mockups.zsh
+zsh examples/refresh-and-mockups.zsh -c /path/to/comms-cache -m /path/to/mockups -p CLP_bills -p CLP_letters
+```
+
+Run the PowerShell version similarly:
+
+```powershell
+PowerShell.exe -NoProfile -ExecutionPolicy Bypass -File .\examples\refresh-and-mockups.ps1
+PowerShell.exe -NoProfile -ExecutionPolicy Bypass -File .\examples\refresh-and-mockups.ps1 -Cache C:\work\comms-cache -Mockups C:\work\mockups -Package CLP_bills,CLP_letters
+```
+
+The PowerShell script runs in the Windows PowerShell included with Windows and
+uses only `robocopy.exe` for the mirror step. For a locked-down VDI, it does not
+require installation or administrator permissions beyond having `occs` on
+`PATH`. Pass `-Occs C:\tools\occs.cmd` if it is elsewhere. To mirror a completed
+export without downloading again, pass `-Source C:\path\to\output`.
+
 
 # File Structure
 ```
