@@ -27,6 +27,8 @@ import { consumeRuntimeCompletionContext, startRuntimeCounter, stopRuntimeCounte
 import { sessionsCommand, useSessionCommand } from '../lib/sessionCommands.js';
 import { setJsonPretty } from '../lib/utils.js';
 import { DEFAULT_REQUEST_TIMEOUT_MS, setDefaultRequestTimeoutMs } from '../lib/requestTimeout.js';
+import { ExportResumeState } from '../lib/exportResume.js';
+import path from 'path';
 
 const require = createRequire(import.meta.url);
 const { version: CLI_VERSION } = require('../package.json');
@@ -420,18 +422,25 @@ program
 program
   .command('get-everything')
   .description('Get everything from Oracle CCS')
-  .option('-o, --output <dir>', 'Output directory to dump package data')
+  .option('-o, --output <dir>', 'Output directory for the complete CCS export cache')
+  .option('--resume', 'Resume an interrupted export in --output, retrying incomplete or missing artifacts')
   .option('-v, --verbose', 'Verbose logging')
   .action(async (cmd) => {
-    await listPackagesCommand(cmd);
-    await listDocumentsCommand(cmd);    
-    await listLayoutsCommand(cmd);
-    await listContentsCommand(cmd);
-    const fonts = await listFontsCommand(cmd);
-    await listStylesCommand(cmd);
-    await listChartsCommand(cmd);
-    if (fonts?.ok === false) {
-      console.error("⚠ Export completed with font download failures. Run `occs list-fonts` later to retry only missing font files.");
+    if (cmd.resume && !cmd.output) throw new Error('`get-everything --resume` requires `--output <dir>` so the export cache is unambiguous.');
+    const outputBase = cmd.output || './output';
+    const exportResume = new ExportResumeState(outputBase, Boolean(cmd.resume));
+    const commandFor = (type) => ({ ...cmd, output: path.join(outputBase, type), exportResume });
+    const results = [
+      await listPackagesCommand(commandFor('packages')),
+      await listDocumentsCommand(commandFor('documents')),
+      await listLayoutsCommand(commandFor('layouts')),
+      await listContentsCommand(commandFor('contents')),
+      await listFontsCommand(commandFor('fonts')),
+      await listStylesCommand(commandFor('styles')),
+      await listChartsCommand(commandFor('charts')),
+    ];
+    if (results.some((result) => result?.ok === false)) {
+      console.error("⚠ Export completed with failures. Re-run `occs get-everything --resume --output <dir>` to retry incomplete or missing artifacts.");
       process.exitCode = 1;
       return;
     }
