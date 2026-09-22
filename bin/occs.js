@@ -423,12 +423,13 @@ program
   .command('get-everything')
   .description('Get everything from Oracle CCS')
   .option('-o, --output <dir>', 'Output directory for the complete CCS export cache')
-  .option('--resume', 'Resume an interrupted export in --output, retrying incomplete or missing artifacts')
+  .option('--resume', 'Resume the export cache (default; retained for scripts)')
+  .option('--fresh', 'Discard the export cache and download every artifact again')
   .option('-v, --verbose', 'Verbose logging')
   .action(async (cmd) => {
-    if (cmd.resume && !cmd.output) throw new Error('`get-everything --resume` requires `--output <dir>` so the export cache is unambiguous.');
+    if (cmd.resume && cmd.fresh) throw new Error('Choose either `--resume` or `--fresh`, not both.');
     const outputBase = cmd.output || './output';
-    const exportResume = new ExportResumeState(outputBase, Boolean(cmd.resume));
+    const exportResume = new ExportResumeState(outputBase, !cmd.fresh);
     const commandFor = (type) => ({ ...cmd, output: path.join(outputBase, type), exportResume });
     const results = [
       await listPackagesCommand(commandFor('packages')),
@@ -440,7 +441,7 @@ program
       await listChartsCommand(commandFor('charts')),
     ];
     if (results.some((result) => result?.ok === false)) {
-      console.error("⚠ Export completed with failures. Re-run `occs get-everything --resume --output <dir>` to retry incomplete or missing artifacts.");
+      console.error("⚠ Export completed with failures. Re-run `occs get-everything --output <dir>` to retry incomplete or missing artifacts.");
       process.exitCode = 1;
       return;
     }

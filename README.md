@@ -164,11 +164,11 @@ Downloads all CCS data including packages, documents, layouts, contents, styles,
 
 `occs-cli get-everything`
 
-To resume an interrupted export, use a named cache directory:
+`get-everything` resumes its cache by default. To use a named cache directory:
 
-`occs-cli get-everything --output ./comms_cache --resume`
+`occs-cli get-everything --output ./comms_cache`
 
-The command always refreshes the CCS collection indexes, then uses `get-everything-state.json` in that output directory to skip only fully completed, byte-verified artifacts with an unchanged source record. Missing, changed, corrupt, pending, and failed artifacts are downloaded again. `--resume` requires `--output` so it cannot accidentally reuse an unrelated cache. A normal run without `--resume` starts a fresh export.
+The command always refreshes the CCS collection indexes, then uses `get-everything-state.json` in that output directory to skip only fully completed, byte-verified artifacts with an unchanged source record. Missing, changed, corrupt, pending, and failed artifacts are downloaded again. The default cache directory is `./output`; use `--fresh` when a full re-download is required. `--resume` remains accepted for scripts but is now the default behavior.
 
 The export is also recoverable if a font file cannot be retrieved: all metadata and every successfully downloaded file remain in place, styles are still exported, and a later `occs list-fonts` retries only missing font files. A failed font file is reported at the end and causes a non-zero exit code so unattended jobs can still detect the incomplete export.
 
