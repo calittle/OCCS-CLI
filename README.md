@@ -50,6 +50,24 @@ npm install
 npm link
 ```
 
+### Upgrade from a release ZIP
+
+To upgrade without using Git, download the ZIP asset for the new GitHub Release
+and unzip it into a new installation directory. Keep your smoke-suite JSON and
+sample input files outside the release directory so they are not overwritten.
+Then open a terminal in the new directory and run:
+
+```sh
+npm ci
+npm link
+occs --version
+```
+
+`npm ci` installs the exact JavaScript dependencies recorded in that release's
+`package-lock.json`. `npm link` updates the global `occs` command to use the
+newly extracted release. System tools such as ImageMagick and Chrome/Chromium
+are not included in the ZIP and remain separately installed prerequisites.
+
 ## Usage
 
 OCCS CLI 0.1.0
