@@ -601,7 +601,7 @@ contentCommand
   .action(contentCreateCommand);
 
 contentCommand
-  .command('version <contentUuid> <version>')
+  .command('version <contentNameOrUuid> <version>')
   .description('Create an editable content version and upload an HTML blob')
   .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
   .requiredOption('--html <path>', 'HTML fragment to upload')
