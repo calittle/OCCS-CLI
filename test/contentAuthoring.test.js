@@ -64,6 +64,31 @@ test('builds a later-version payload and the follow-up editable-master update', 
   assert.equal(update.CommunicationContentConfigRec.CommunicationContentConfigInfo.ConfigId, '90');
 });
 
+test('flattens OCCS collection envelopes before updating a new version master', () => {
+  const update = buildVersionMasterUpdatePayload({
+    createdVersion: {
+      CommunicationContentVersionConfigRec: {
+        CommunicationContentVersionConfigInfo: {
+          ShortName: '2.0', Language: 'en-US',
+          CommunicationContentVersionConfigData: { Items: [{ StyleClassName: [], ConfigId: '90' }] },
+        },
+        Status: { Items: [{ StatusCode: 'Active', EffDtTm: '2026-09-24T00:00:00.000000Z', ConfigId: '90' }] },
+      },
+      CommunicationContentVersionStyles: { Items: [] },
+    },
+    contentRecord: {
+      CommunicationContentConfigInfo: { Name: 'create-test-2', ShortName: 'create-test-2', ContentType: 'Text' },
+      Status: { Items: [{ StatusCode: 'Active', EffDtTm: '2026-09-23T00:00:00.000000Z', ConfigId: '90' }] },
+    },
+    configId: '90',
+    inProgressDate: '2026-09-23',
+  });
+  assert.deepEqual(update.CommunicationContentVersionConfigRec.CommunicationContentVersionConfigInfo.CommunicationContentVersionConfigData, [
+    { StyleClassName: [], ConfigId: '90' },
+  ]);
+  assert.deepEqual(update.CommunicationContentVersionStyles, []);
+});
+
 test('uses a single binary blob part and preserves OCCS markup verbatim', () => {
   const html = '<p>&lt;comms-data&gt;$Data{"Id":"field"}&lt;/comms-data&gt;</p>';
   const { boundary, body } = buildContentBlobMultipart(html);
