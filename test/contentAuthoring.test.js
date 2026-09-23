@@ -30,6 +30,17 @@ test('builds the HAR-derived payload for a new content item and first version', 
   });
 });
 
+test('uses the observed en-US language default rather than accepting a caller override', () => {
+  const firstVersion = buildCreateContentPayload({
+    shortName: 'content', effectiveDate: '2026-09-23', language: 'fr-FR',
+  });
+  const laterVersion = buildCreateVersionPayload({
+    contentUuid: 'CONTENT', version: '2.0', effectiveDate: '2026-09-24', language: 'fr-FR',
+  });
+  assert.equal(firstVersion.CommunicationContentVersionConfigRec.CommunicationContentVersionConfigInfo.Language, 'en-US');
+  assert.equal(laterVersion.CommunicationContentVersionConfigRec.CommunicationContentVersionConfigInfo.Language, 'en-US');
+});
+
 test('builds a later-version payload and the follow-up editable-master update', () => {
   const create = buildCreateVersionPayload({ contentUuid: 'CONTENT', version: '2.0', effectiveDate: '2026-09-24', configId: '90' });
   assert.equal(create.CommunicationContentVersionConfigRec.CommunicationContentVersionConfigInfo.CommunicationContentConfigUuid, 'CONTENT');
