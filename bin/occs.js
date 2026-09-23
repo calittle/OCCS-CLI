@@ -604,7 +604,8 @@ contentCommand
 
 contentCommand
   .command('inspect <contentNameOrUuid>')
-  .description('Read content metadata and available versions without downloading HTML')
+  .description('Read content metadata and available versions')
+  .option('--include-html', 'Also download the newest version HTML')
   .option('--json', 'Write the machine-readable result to stdout')
   .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('-v, --verbose', 'Include request detail')
