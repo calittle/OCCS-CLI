@@ -696,9 +696,10 @@ occs content version C9E6E13C2E8F4DCF80982932431E7FE1 2.0 \
   --effective-date 2026-09-24
 ```
 
-Use `--dry-run` to resolve the ConfigId and inspect the initial request payload
-without writing to OCCS. These are write operations; validate against a
-non-production ConfigId first.
+Use `--dry-run` to resolve the ConfigId and validate the request without
+writing to OCCS. Add `--json` when a caller such as ATool needs the complete
+resolved ConfigId and request payload. These are write operations; validate
+against a non-production ConfigId first.
 
 ## Extending
 Each command lives in `lib/` and can be extended independently:

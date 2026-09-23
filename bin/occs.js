@@ -594,7 +594,8 @@ contentCommand
   .option('--type <type>', 'Content type', 'Text')
   .option('--version <version>', 'Initial version short name', '1.0')
   .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
-  .option('--dry-run', 'Print the create payload without changing OCCS')
+  .option('--dry-run', 'Validate the request without changing OCCS')
+  .option('--json', 'Write the full machine-readable result to stdout')
   .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('-v, --verbose', 'Include request detail')
   .action(contentCreateCommand);
@@ -605,7 +606,8 @@ contentCommand
   .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
   .requiredOption('--html <path>', 'HTML fragment to upload')
   .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
-  .option('--dry-run', 'Print the create payload without changing OCCS')
+  .option('--dry-run', 'Validate the request without changing OCCS')
+  .option('--json', 'Write the full machine-readable result to stdout')
   .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('-v, --verbose', 'Include request detail')
   .action(contentVersionCommand);
