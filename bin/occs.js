@@ -590,7 +590,7 @@ contentCommand
   .option('--config-id <nameOrId>', 'Limit results to an open OCCS ConfigId short name, name, or internal ID')
   .option('--filter <text>', 'Match short name, display name, description, or type')
   .option('--type <type>', 'Limit results to a content type, such as Text, Image, Link, or Chart')
-  .option('--limit <count>', 'Maximum content records to return (default 50)', '50')
+  .option('--limit <count>', 'Maximum content records to return (defaults to all matching records)')
   .option('--json', 'Write the machine-readable result to stdout')
   .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('-v, --verbose', 'Include request detail')
