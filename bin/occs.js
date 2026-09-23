@@ -6,7 +6,7 @@ import loginCommand from '../lib/auth.js';
 import { documentCatalogCommand, getDocumentCommand, listDocumentsCommand } from '../lib/documents.js';
 import { getPackageCommand, listPackagesCommand } from '../lib/packages.js';
 import { getLayoutCommand, listLayoutsCommand } from '../lib/layouts.js';
-import { contentCreateCommand, contentInspectCommand, contentListCommand, contentReadCommand, contentSaveCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
+import { contentCreateCommand, contentInspectCommand, contentListCommand, contentReadCommand, contentSaveCommand, contentStylesCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
 import { getStyleCommand, listStylesCommand } from '../lib/styles.js';
 import { getChartCommand, listChartsCommand } from '../lib/charts.js';
 import { getFontCommand, listFontsCommand } from '../lib/fonts.js';
@@ -603,6 +603,14 @@ contentCommand
   .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('-v, --verbose', 'Include request detail')
   .action(contentReadCommand);
+
+contentCommand
+  .command('styles <contentNameOrUuid> <version>')
+  .description('Resolve styles associated with a content version')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentStylesCommand);
 
 contentCommand
   .command('inspect <contentNameOrUuid>')
