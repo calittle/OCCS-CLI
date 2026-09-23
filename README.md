@@ -19,6 +19,7 @@ This CLI tool requires:
 * Graphviz (dot command) – required to generate .svg graphs
 * Poppler (`pdftoppm` and `pdfinfo`) – required for PDF smoke-test thumbnails and page counts
 * ImageMagick (`identify` and `compare`) – required only for visual comparison in two-tenancy smoke tests
+* Chrome or Chromium – required only for HTML visual comparison in two-tenancy smoke tests
 
 ### macOs
 Use brew to install prerequisites.
@@ -34,7 +35,7 @@ Use brew to install prerequisites.
 3. Install Poppler and ImageMagick, and add the folders containing their executables to the system `PATH`.
 4.	Verify Installation by running at the command prompt: `dot -V`, `pdftoppm -v`, `pdfinfo -v`, and (for two-tenancy visual comparisons) `identify -version` and `compare -version`.
 
-`npm install` installs JavaScript dependencies only. It does not install Graphviz, Poppler, or ImageMagick, because they are operating-system tools.
+`npm install` installs JavaScript dependencies only. It does not install Graphviz, Poppler, ImageMagick, Chrome, or Chromium, because they are operating-system tools.
 
 
 ## Installation
@@ -403,7 +404,7 @@ Create a suite JSON file. Input paths are relative to the suite file, so the sui
     { "id": "bill-bulk", "type": "Bill BULK", "package": "example_bills", "input": "bill-BULK.json" },
     { "id": "bill-plt", "type": "Bill PLT", "package": "example_bills", "input": "bill-PLT.json" },
     { "id": "letter", "type": "Letter", "package": "example_letters", "input": "letter.json" },
-    { "id": "ebill", "type": "eBill", "package": "example_email_body_ebill", "input": "eBill.json" }
+    { "id": "ebill", "type": "eBill", "package": "example_email_body_ebill", "input": "eBill.json", "output": "html" }
   ]
 }
 ```
@@ -414,7 +415,7 @@ Run it with:
 occs smoke --suite ./smoke-suite.json --output ./smoke-output
 ```
 
-Each entry may include `"renderTypes": ["PDF", "HTML"]`; PDF is the default. Use `--tenancy non-prod` to override the suite target. Every new run writes to a date/time-stamped output folder (for example, `smoke-output-2026-08-25_14-30-15-123`) so earlier results are retained. Add `--resume` to reuse the most recent matching output folder: successful non-empty outputs are retained, while missing or failed previews are retried. In comparison mode, this applies independently to each environment. The run writes `smoke-results.json`, rendered files under `previews/`, PDF first-page PNGs under `thumbnails/`, a browser report (`smoke-report.html`), and two email draft artifacts: `smoke-email.html` and `smoke-email.eml`. The report and email identify each test's input file, and list the page count for every generated PDF. They begin with the environment, generation counts, and—when comparing environments—visual-comparison pass, review, and failure counts. Open the `.eml` file in Outlook to review or edit the message, then send it yourself if appropriate.
+Each entry renders PDF by default. Set `"output": "html"` on a test to request HTML instead. The existing `"renderTypes": ["PDF", "HTML"]` form remains available when a test must generate both. Use `--tenancy non-prod` to override the suite target. Every new run writes to a date/time-stamped output folder (for example, `smoke-output-2026-08-25_14-30-15-123`) so earlier results are retained. Add `--resume` to reuse the most recent matching output folder: successful non-empty outputs are retained, while missing or failed previews are retried. In comparison mode, this applies independently to each environment. PDF tests are compared by rendered PDF pages; HTML-only tests are captured in a fixed Chrome/Chromium viewport and compared as full-page PNGs. HTML comparison requires Chrome or Chromium; set `OCCS_SMOKE_BROWSER` if it is not in a standard location. The run writes `smoke-results.json`, rendered files under `previews/`, PDF first-page PNGs under `thumbnails/`, a browser report (`smoke-report.html`), and two email draft artifacts: `smoke-email.html` and `smoke-email.eml`. The report and email identify each test's input file, and list the page count for every generated PDF. They begin with the environment, generation counts, and—when comparing environments—visual-comparison pass, review, and failure counts. Open the `.eml` file in Outlook to review or edit the message, then send it yourself if appropriate.
 
 To compare two targets side by side, add a second target:
 
@@ -570,8 +571,8 @@ With `--all`, output defaults to `./comms_cache/mockups/example_bills/`. If supp
 #### Refresh cache and generate selected mockups
 
 The `examples/refresh-and-mockups.zsh` (macOS/Linux) and
-`examples/refresh-and-mockups.ps1` (Windows) scripts download a fresh cache,
-mirror it locally (pruning artifacts that no longer exist in CCS), and generate
+`examples/refresh-and-mockups.ps1` (Windows) scripts refresh their configured
+cache directly, preserving `get-everything`'s resume manifest, and generate
 mockups. Both default to `CLP_bills`, `CLP_letters`, `CLP_braille`,
 `CLP_Emails`, and `CLP_statements`.
 
@@ -590,11 +591,11 @@ PowerShell.exe -NoProfile -ExecutionPolicy Bypass -File .\examples\refresh-and-m
 PowerShell.exe -NoProfile -ExecutionPolicy Bypass -File .\examples\refresh-and-mockups.ps1 -Cache C:\work\comms-cache -Mockups C:\work\mockups -Package CLP_bills,CLP_letters
 ```
 
-The PowerShell script runs in the Windows PowerShell included with Windows and
-uses only `robocopy.exe` for the mirror step. For a locked-down VDI, it does not
-require installation or administrator permissions beyond having `occs` on
-`PATH`. Pass `-Occs C:\tools\occs.cmd` if it is elsewhere. To mirror a completed
-export without downloading again, pass `-Source C:\path\to\output`.
+The PowerShell script runs in the Windows PowerShell included with Windows. For
+a locked-down VDI, it does not require installation or administrator permissions
+beyond having `occs` on `PATH`. Pass `-Occs C:\tools\occs.cmd` if it is elsewhere.
+To copy a completed export into the cache without downloading again, pass
+`-Source C:\path\to\output`; that path uses the built-in `robocopy.exe` utility.
 
 
 # File Structure

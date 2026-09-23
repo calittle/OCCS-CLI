@@ -7,6 +7,6 @@
     { "id": "bill-bulk", "type": "Bill BULK", "package": "example_bills", "input": "bill-BULK.json" },
     { "id": "bill-plt", "type": "Bill PLT", "package": "example_bills", "input": "bill-PLT.json" },
     { "id": "letter", "type": "Letter", "package": "example_letters", "input": "letter.json" },
-    { "id": "ebill", "type": "eBill", "package": "example_email_body_ebill", "input": "eBill.json" }
+    { "id": "ebill", "type": "eBill", "package": "example_email_body_ebill", "input": "eBill.json", "output": "html" }
   ]
 }
