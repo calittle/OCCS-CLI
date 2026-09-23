@@ -587,7 +587,7 @@ const contentCommand = program
 contentCommand
   .command('create <shortName>')
   .description('Create text content, its first version, and its HTML blob')
-  .requiredOption('--config-id <id>', 'Open OCCS ConfigId')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
   .requiredOption('--html <path>', 'HTML fragment to upload')
   .option('--name <name>', 'Display name (defaults to short name)')
   .option('--desc <description>', 'Content description')
@@ -602,7 +602,7 @@ contentCommand
 contentCommand
   .command('version <contentUuid> <version>')
   .description('Create an editable content version and upload an HTML blob')
-  .requiredOption('--config-id <id>', 'Open OCCS ConfigId')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
   .requiredOption('--html <path>', 'HTML fragment to upload')
   .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
   .option('--dry-run', 'Print the create payload without changing OCCS')

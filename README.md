@@ -672,7 +672,7 @@ output/
 ## Content authoring
 
 `content` creates OCCS text content and versions from an HTML fragment. Both
-commands require an open ConfigId, and preserve the supplied fragment verbatim;
+commands require an open ConfigId short name, name, or internal ID, and preserve the supplied fragment verbatim;
 that includes escaped OCCS directives such as `&lt;comms-data&gt;` and
 `&lt;comms-cond&gt;`.
 
@@ -696,8 +696,9 @@ occs content version C9E6E13C2E8F4DCF80982932431E7FE1 2.0 \
   --effective-date 2026-09-24
 ```
 
-Use `--dry-run` to inspect the initial request payload without contacting OCCS.
-These are write operations; validate against a non-production ConfigId first.
+Use `--dry-run` to resolve the ConfigId and inspect the initial request payload
+without writing to OCCS. These are write operations; validate against a
+non-production ConfigId first.
 
 ## Extending
 Each command lives in `lib/` and can be extended independently:
