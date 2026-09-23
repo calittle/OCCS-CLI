@@ -72,7 +72,10 @@ test('flattens OCCS collection envelopes before updating a new version master', 
           ShortName: '2.0', Language: 'en-US',
           CommunicationContentVersionConfigData: { Items: [{ StyleClassName: [], ConfigId: '90' }] },
         },
-        Status: { Items: [{ StatusCode: 'Active', EffDtTm: '2026-09-24T00:00:00.000000Z', ConfigId: '90' }] },
+        Status: { Items: [
+          { StatusCode: 'In Progress', EffDtTm: '2026-09-23T00:00:00.000000Z', ConfigId: '90' },
+          { StatusCode: 'Active', EffDtTm: '2026-09-24T00:00:00.000000Z', ConfigId: '90' },
+        ] },
       },
       CommunicationContentVersionStyles: { Items: [] },
     },
@@ -85,6 +88,10 @@ test('flattens OCCS collection envelopes before updating a new version master', 
   });
   assert.deepEqual(update.CommunicationContentVersionConfigRec.CommunicationContentVersionConfigInfo.CommunicationContentVersionConfigData, [
     { StyleClassName: [], ConfigId: '90' },
+  ]);
+  assert.deepEqual(update.CommunicationContentVersionConfigRec.Status, [
+    { StatusCode: 'In Progress', EffDtTm: '2026-09-23T00:00:00.000000Z', ConfigId: '90' },
+    { StatusCode: 'Active', EffDtTm: '2026-09-24T00:00:00.000000Z', ConfigId: '90' },
   ]);
   assert.deepEqual(update.CommunicationContentVersionStyles, []);
 });
