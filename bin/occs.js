@@ -6,7 +6,7 @@ import loginCommand from '../lib/auth.js';
 import { documentCatalogCommand, getDocumentCommand, listDocumentsCommand } from '../lib/documents.js';
 import { getPackageCommand, listPackagesCommand } from '../lib/packages.js';
 import { getLayoutCommand, listLayoutsCommand } from '../lib/layouts.js';
-import { contentCreateCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
+import { contentCreateCommand, contentInspectCommand, contentListCommand, contentReadCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
 import { getStyleCommand, listStylesCommand } from '../lib/styles.js';
 import { getChartCommand, listChartsCommand } from '../lib/charts.js';
 import { getFontCommand, listFontsCommand } from '../lib/fonts.js';
@@ -583,6 +583,32 @@ const contentCommand = program
   .option('--region <region>', 'Oracle region for saved-session lookup')
   .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
   .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup');
+
+contentCommand
+  .command('list')
+  .description('List content metadata for an OCCS Config ID')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
+  .option('--filter <text>', 'Match short name, display name, description, or type')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentListCommand);
+
+contentCommand
+  .command('read <contentNameOrUuid> <version>')
+  .description('Read one content version metadata and HTML')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentReadCommand);
+
+contentCommand
+  .command('inspect <contentNameOrUuid>')
+  .description('Read content metadata and available versions without downloading HTML')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentInspectCommand);
 
 contentCommand
   .command('create <shortName>')

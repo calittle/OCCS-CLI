@@ -7,6 +7,7 @@ import {
   buildCreateVersionPayload,
   buildVersionMasterUpdatePayload,
   contentCommandErrorSummary,
+  filterContentBrowserItems,
   normalizeContentHtml,
   resolveSourceContentVersion,
 } from '../lib/contents.js';
@@ -140,6 +141,14 @@ test('normalizes semantic emphasis to the italic markup persisted by the Comms e
   const html = '<p><em>italic</em>, <EM class="accent">also italic</EM></p>';
   assert.equal(normalizeContentHtml(html), '<p><i>italic</i>, <i class="accent">also italic</i></p>');
   assert.match(buildContentBlobMultipart(html).body.toString('utf8'), /<i>italic<\/i>/);
+});
+
+test('filters content browser metadata across identifiers, names, and descriptions', () => {
+  const items = filterContentBrowserItems([
+    { CommunicationContentConfigRec: { CommunicationContentConfigUuid: 'ONE', CommunicationContentConfigInfo: { ShortName: 'billing_notice', Name: 'Billing Notice', Desc: 'Overdue account reminder', ContentType: 'Text' } } },
+    { CommunicationContentConfigRec: { CommunicationContentConfigUuid: 'TWO', CommunicationContentConfigInfo: { ShortName: 'welcome', Name: 'Welcome Letter', Desc: 'New customer greeting', ContentType: 'Text' } } },
+  ], 'billing overdue');
+  assert.deepEqual(items.map((item) => item.shortName), ['billing_notice']);
 });
 
 test('reports only OCCS error fields and excludes unsafe Axios request details', () => {
