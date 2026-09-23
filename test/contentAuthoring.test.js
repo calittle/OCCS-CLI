@@ -7,6 +7,7 @@ import {
   buildCreateVersionPayload,
   buildVersionMasterUpdatePayload,
   contentCommandErrorSummary,
+  normalizeContentHtml,
   resolveSourceContentVersion,
 } from '../lib/contents.js';
 
@@ -133,6 +134,12 @@ test('uses a single binary blob part and preserves OCCS markup verbatim', () => 
   assert.match(wire, /filename="blob"/);
   assert.ok(wire.includes(html));
   assert.match(wire, new RegExp(`--${boundary}--\\r\\n$`));
+});
+
+test('normalizes semantic emphasis to the italic markup persisted by the Comms editor', () => {
+  const html = '<p><em>italic</em>, <EM class="accent">also italic</EM></p>';
+  assert.equal(normalizeContentHtml(html), '<p><i>italic</i>, <i class="accent">also italic</i></p>');
+  assert.match(buildContentBlobMultipart(html).body.toString('utf8'), /<i>italic<\/i>/);
 });
 
 test('reports only OCCS error fields and excludes unsafe Axios request details', () => {
