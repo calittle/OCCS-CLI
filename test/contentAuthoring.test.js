@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildContentBlobMultipart,
+  buildCopiedVersionStyles,
   buildCreateContentPayload,
   buildCreateVersionPayload,
   buildVersionMasterUpdatePayload,
   contentCommandErrorSummary,
+  resolveSourceContentVersion,
 } from '../lib/contents.js';
 
 test('builds the HAR-derived payload for a new content item and first version', () => {
@@ -94,6 +96,33 @@ test('flattens OCCS collection envelopes before updating a new version master', 
     { StatusCode: 'Active', EffDtTm: '2026-09-24T00:00:00.000000Z', ConfigId: '90' },
   ]);
   assert.deepEqual(update.CommunicationContentVersionStyles, []);
+});
+
+test('copies source version style relationships using the DUMMY target required by OCCS', () => {
+  const copied = buildCopiedVersionStyles([{
+    CommunicationStyleConfigCommunicationContentVersionConfigRelRec: {
+      CommunicationStyleConfigCommunicationContentVersionConfigRelInfo: {
+        CommunicationStyleConfigUuid: 'STYLE', StyleRelIndex: 1, StyleClassName: 'notice', CommunicationContentVersionConfigUuid: 'SOURCE', ConfigId: '90',
+      },
+    },
+  }], '90');
+  assert.deepEqual(copied, [{
+    CommunicationStyleConfigCommunicationContentVersionConfigRelRec: {
+      CommunicationStyleConfigCommunicationContentVersionConfigRelInfo: {
+        CommunicationStyleConfigUuid: 'STYLE', StyleRelIndex: 1, StyleClassName: 'notice', CommunicationContentVersionConfigUuid: 'DUMMY', ConfigId: '90',
+      },
+    },
+  }]);
+});
+
+test('resolves a requested source version from the content master', () => {
+  const record = resolveSourceContentVersion({
+    CommunicationContentMasterVersions: [
+      { CommunicationContentVersionConfigRec: { CommunicationContentVersionConfigUuid: 'ONE', CommunicationContentVersionConfigInfo: { ShortName: '1.0' } } },
+      { CommunicationContentVersionConfigRec: { CommunicationContentVersionConfigUuid: 'TWO', CommunicationContentVersionConfigInfo: { ShortName: '2.0' } } },
+    ],
+  }, '2.0');
+  assert.equal(record.CommunicationContentVersionConfigUuid, 'TWO');
 });
 
 test('uses a single binary blob part and preserves OCCS markup verbatim', () => {

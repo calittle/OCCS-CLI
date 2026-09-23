@@ -692,6 +692,7 @@ the HTML blob.
 ```zsh
 occs content version welcome_message 2.0 \
   --config-id 90 \
+  --from-version 1.0 \
   --html ./welcome_message-v2.html \
   --effective-date 2026-09-24
 ```

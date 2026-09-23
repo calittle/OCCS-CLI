@@ -604,6 +604,7 @@ contentCommand
   .command('version <contentNameOrUuid> <version>')
   .description('Create an editable content version and upload an HTML blob')
   .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
+  .requiredOption('--from-version <version>', 'Existing version whose metadata and styles should be copied')
   .requiredOption('--html <path>', 'HTML fragment to upload')
   .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
   .option('--dry-run', 'Validate the request without changing OCCS')
