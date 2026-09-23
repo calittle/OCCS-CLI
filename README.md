@@ -669,6 +669,36 @@ output/
   +- crossref
          + crossref.csv
 ```
+## Content authoring
+
+`content` creates OCCS text content and versions from an HTML fragment. Both
+commands require an open ConfigId, and preserve the supplied fragment verbatim;
+that includes escaped OCCS directives such as `&lt;comms-data&gt;` and
+`&lt;comms-cond&gt;`.
+
+Create a content item, its initial version, and upload its HTML:
+
+```zsh
+occs content create welcome_message \
+  --config-id 90 \
+  --html ./welcome_message.html \
+  --effective-date 2026-09-23
+```
+
+Create a later version. The command follows the OCCS UI's observed sequence:
+create the version, open it by updating its version master record, then upload
+the HTML blob.
+
+```zsh
+occs content version C9E6E13C2E8F4DCF80982932431E7FE1 2.0 \
+  --config-id 90 \
+  --html ./welcome_message-v2.html \
+  --effective-date 2026-09-24
+```
+
+Use `--dry-run` to inspect the initial request payload without contacting OCCS.
+These are write operations; validate against a non-production ConfigId first.
+
 ## Extending
 Each command lives in `lib/` and can be extended independently:
 *	lib/auth.js

@@ -6,7 +6,7 @@ import loginCommand from '../lib/auth.js';
 import { documentCatalogCommand, getDocumentCommand, listDocumentsCommand } from '../lib/documents.js';
 import { getPackageCommand, listPackagesCommand } from '../lib/packages.js';
 import { getLayoutCommand, listLayoutsCommand } from '../lib/layouts.js';
-import { getContentCommand, listContentsCommand } from '../lib/contents.js';
+import { contentCreateCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
 import { getStyleCommand, listStylesCommand } from '../lib/styles.js';
 import { getChartCommand, listChartsCommand } from '../lib/charts.js';
 import { getFontCommand, listFontsCommand } from '../lib/fonts.js';
@@ -568,12 +568,49 @@ program
   .option('-v, --verbose', 'Verbose logging')
   .action(listLayoutsCommand);
 
-  program
+program
   .command('list-contents')
   .description('List contents from Oracle CCS')
   .option('-o, --output <dir>', 'Output directory to dump content data')
   .option('-v, --verbose', 'Verbose logging')
   .action(listContentsCommand);
+
+const contentCommand = program
+  .command('content')
+  .description('Create and version communication content')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup');
+
+contentCommand
+  .command('create <shortName>')
+  .description('Create text content, its first version, and its HTML blob')
+  .requiredOption('--config-id <id>', 'Open OCCS ConfigId')
+  .requiredOption('--html <path>', 'HTML fragment to upload')
+  .option('--name <name>', 'Display name (defaults to short name)')
+  .option('--desc <description>', 'Content description')
+  .option('--type <type>', 'Content type', 'Text')
+  .option('--version <version>', 'Initial version short name', '1.0')
+  .option('--language <language>', 'Content language', 'en-US')
+  .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
+  .option('--dry-run', 'Print the create payload without changing OCCS')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentCreateCommand);
+
+contentCommand
+  .command('version <contentUuid> <version>')
+  .description('Create an editable content version and upload an HTML blob')
+  .requiredOption('--config-id <id>', 'Open OCCS ConfigId')
+  .requiredOption('--html <path>', 'HTML fragment to upload')
+  .option('--language <language>', 'Content language', 'en-US')
+  .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
+  .option('--dry-run', 'Print the create payload without changing OCCS')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentVersionCommand);
 
 if (!process.argv.includes('--json')) {
   showBanner();
