@@ -587,7 +587,7 @@ const contentCommand = program
 contentCommand
   .command('list')
   .description('List content metadata for an OCCS Config ID')
-  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
+  .option('--config-id <nameOrId>', 'Limit results to an open OCCS ConfigId short name, name, or internal ID')
   .option('--filter <text>', 'Match short name, display name, description, or type')
   .option('--json', 'Write the machine-readable result to stdout')
   .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
