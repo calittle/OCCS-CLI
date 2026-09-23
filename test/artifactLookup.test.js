@@ -12,8 +12,8 @@ test('resolves a content short name exactly after an OCCS-style broad search', a
     response.end(JSON.stringify({
       HasMore: false,
       Items: [
-        { CommunicationContentConfigUuid: 'EXACT', CommunicationContentConfigInfo: { ShortName: 'create-test-2' } },
-        { CommunicationContentConfigUuid: 'SIMILAR', CommunicationContentConfigInfo: { ShortName: 'create-test-20' } },
+        { CommunicationContentConfigRec: { CommunicationContentConfigUuid: 'EXACT', CommunicationContentConfigInfo: { ShortName: 'create-test-2' } } },
+        { CommunicationContentConfigRec: { CommunicationContentConfigUuid: 'SIMILAR', CommunicationContentConfigInfo: { ShortName: 'create-test-20' } } },
       ],
     }));
   });
@@ -26,9 +26,9 @@ test('resolves a content short name exactly after an OCCS-style broad search', a
       '/api/CommunicationContent/v1/CommunicationContentConfigRec',
       'CommunicationContentConfigInfo.ShortName',
       'create-test-2',
-      (item) => ({ shortName: item.CommunicationContentConfigInfo?.ShortName }),
+      (item) => ({ shortName: item.CommunicationContentConfigRec?.CommunicationContentConfigInfo?.ShortName }),
     );
-    assert.equal(content.CommunicationContentConfigUuid, 'EXACT');
+    assert.equal(content.CommunicationContentConfigRec.CommunicationContentConfigUuid, 'EXACT');
   } finally {
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   }
