@@ -6,7 +6,7 @@ import loginCommand from '../lib/auth.js';
 import { documentCatalogCommand, getDocumentCommand, listDocumentsCommand } from '../lib/documents.js';
 import { getPackageCommand, listPackagesCommand } from '../lib/packages.js';
 import { getLayoutCommand, listLayoutsCommand } from '../lib/layouts.js';
-import { contentCreateCommand, contentInspectCommand, contentListCommand, contentReadCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
+import { contentCreateCommand, contentInspectCommand, contentListCommand, contentReadCommand, contentSaveCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
 import { getStyleCommand, listStylesCommand } from '../lib/styles.js';
 import { getChartCommand, listChartsCommand } from '../lib/charts.js';
 import { getFontCommand, listFontsCommand } from '../lib/fonts.js';
@@ -610,6 +610,21 @@ contentCommand
   .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('-v, --verbose', 'Include request detail')
   .action(contentInspectCommand);
+
+contentCommand
+  .command('save <contentNameOrUuid> <version>')
+  .description('Save editable content and version metadata, styles, and optional HTML')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
+  .option('--short-name <shortName>', 'Updated content short name')
+  .option('--name <name>', 'Updated content display name')
+  .option('--desc <description>', 'Updated content description')
+  .option('--new-version <version>', 'Updated version short name')
+  .option('--version-desc <description>', 'Updated version description')
+  .option('--html <path>', 'HTML fragment to upload')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentSaveCommand);
 
 contentCommand
   .command('create <shortName>')
