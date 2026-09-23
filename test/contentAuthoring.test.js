@@ -5,6 +5,7 @@ import {
   buildCreateContentPayload,
   buildCreateVersionPayload,
   buildVersionMasterUpdatePayload,
+  contentCommandErrorSummary,
 } from '../lib/contents.js';
 
 test('builds the HAR-derived payload for a new content item and first version', () => {
@@ -71,4 +72,22 @@ test('uses a single binary blob part and preserves OCCS markup verbatim', () => 
   assert.match(wire, /filename="blob"/);
   assert.ok(wire.includes(html));
   assert.match(wire, new RegExp(`--${boundary}--\\r\\n$`));
+});
+
+test('reports only OCCS error fields and excludes unsafe Axios request details', () => {
+  const summary = contentCommandErrorSummary({
+    message: 'Request failed with status code 400',
+    response: {
+      status: 400,
+      headers: { executionid: 'execution-123' },
+      data: { message: 'A version already exists with the provided name.' },
+      config: { headers: { Authorization: 'Bearer should-not-appear' } },
+    },
+  });
+  assert.deepEqual(summary, {
+    message: 'A version already exists with the provided name.',
+    status: 400,
+    executionId: 'execution-123',
+  });
+  assert.doesNotMatch(JSON.stringify(summary), /Authorization|Bearer/);
 });
