@@ -5,6 +5,7 @@ import {
   buildCopiedVersionStyles,
   buildCreateContentPayload,
   buildCreateVersionPayload,
+  buildVersionUpdateStyles,
   buildVersionMasterUpdatePayload,
   contentCommandErrorSummary,
   filterContentBrowserItems,
@@ -113,6 +114,27 @@ test('copies source version style relationships using the DUMMY target required 
       CommunicationStyleConfigCommunicationContentVersionConfigRelInfo: {
         CommunicationStyleConfigUuid: 'STYLE', StyleRelIndex: 1, StyleClassName: 'notice', CommunicationContentVersionConfigUuid: 'DUMMY', ConfigId: '90',
       },
+    },
+  }]);
+});
+
+test('compacts expanded style reads before a version-master update', () => {
+  const styles = buildVersionUpdateStyles([{
+    CommunicationStyleConfigCommunicationContentVersionConfigRelRec: {
+      CommunicationStyleConfigCommunicationContentVersionConfigRelInfo: {
+        CommunicationStyleConfigUuid: 'STYLE', StyleRelIndex: 1, StyleClassName: 'Ming', CommunicationContentVersionConfigUuid: 'OLD', ConfigId: '90',
+      },
+      CommunicationStyleConfigCommunicationContentVersionConfigRelUuid: 'REL',
+      Status: { Items: [{ StatusCode: 'Active' }] },
+    },
+    CommunicationStyleConfigRec: { CommunicationStyleConfigInfo: { Name: 'response-only expansion' } },
+  }], 'VERSION', '90');
+  assert.deepEqual(styles, [{
+    CommunicationStyleConfigCommunicationContentVersionConfigRelRec: {
+      CommunicationStyleConfigCommunicationContentVersionConfigRelInfo: {
+        CommunicationStyleConfigUuid: 'STYLE', StyleRelIndex: 1, StyleClassName: 'Ming', CommunicationContentVersionConfigUuid: 'VERSION', ConfigId: '90',
+      },
+      CommunicationStyleConfigCommunicationContentVersionConfigRelUuid: 'REL',
     },
   }]);
 });
