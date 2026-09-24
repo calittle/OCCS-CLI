@@ -6,7 +6,7 @@ import loginCommand from '../lib/auth.js';
 import { documentCatalogCommand, getDocumentCommand, listDocumentsCommand } from '../lib/documents.js';
 import { getPackageCommand, listPackagesCommand } from '../lib/packages.js';
 import { getLayoutCommand, listLayoutsCommand } from '../lib/layouts.js';
-import { getContentCommand, listContentsCommand } from '../lib/contents.js';
+import { contentCreateCommand, contentInspectCommand, contentListCommand, contentReadCommand, contentSaveCommand, contentStylesCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
 import { getStyleCommand, listStylesCommand } from '../lib/styles.js';
 import { getChartCommand, listChartsCommand } from '../lib/charts.js';
 import { getFontCommand, listFontsCommand } from '../lib/fonts.js';
@@ -568,12 +568,102 @@ program
   .option('-v, --verbose', 'Verbose logging')
   .action(listLayoutsCommand);
 
-  program
+program
   .command('list-contents')
   .description('List contents from Oracle CCS')
   .option('-o, --output <dir>', 'Output directory to dump content data')
   .option('-v, --verbose', 'Verbose logging')
   .action(listContentsCommand);
+
+const contentCommand = program
+  .command('content')
+  .description('Create and version communication content')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup');
+
+contentCommand
+  .command('list')
+  .description('List content metadata for an OCCS Config ID')
+  .option('--config-id <nameOrId>', 'Limit results to an open OCCS ConfigId short name, name, or internal ID')
+  .option('--filter <text>', 'Match short name, display name, description, or type')
+  .option('--type <type>', 'Limit results to a content type, such as Text, Image, Link, or Chart')
+  .option('--limit <count>', 'Maximum content records to return (defaults to all matching records)')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentListCommand);
+
+contentCommand
+  .command('read <contentNameOrUuid> <version>')
+  .description('Read one content version metadata and HTML')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentReadCommand);
+
+contentCommand
+  .command('styles <contentNameOrUuid> <version>')
+  .description('Resolve styles associated with a content version')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentStylesCommand);
+
+contentCommand
+  .command('inspect <contentNameOrUuid>')
+  .description('Read content metadata and available versions')
+  .option('--include-html', 'Also download the newest version HTML')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentInspectCommand);
+
+contentCommand
+  .command('save <contentNameOrUuid> <version>')
+  .description('Save editable content and version metadata, styles, and optional HTML')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
+  .option('--short-name <shortName>', 'Updated content short name')
+  .option('--name <name>', 'Updated content display name')
+  .option('--desc <description>', 'Updated content description')
+  .option('--new-version <version>', 'Updated version short name')
+  .option('--version-desc <description>', 'Updated version description')
+  .option('--html <path>', 'HTML fragment to upload')
+  .option('--json', 'Write the machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentSaveCommand);
+
+contentCommand
+  .command('create <shortName>')
+  .description('Create text content, its first version, and its HTML blob')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
+  .requiredOption('--html <path>', 'HTML fragment to upload')
+  .option('--name <name>', 'Display name (defaults to short name)')
+  .option('--desc <description>', 'Content description')
+  .option('--type <type>', 'Content type', 'Text')
+  .option('--version <version>', 'Initial version short name', '1.0')
+  .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
+  .option('--dry-run', 'Validate the request without changing OCCS')
+  .option('--json', 'Write the full machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentCreateCommand);
+
+contentCommand
+  .command('version <contentNameOrUuid> <version>')
+  .description('Create an editable content version and upload an HTML blob')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
+  .requiredOption('--from-version <version>', 'Existing version whose metadata and styles should be copied')
+  .requiredOption('--html <path>', 'HTML fragment to upload')
+  .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
+  .option('--dry-run', 'Validate the request without changing OCCS')
+  .option('--json', 'Write the full machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentVersionCommand);
 
 if (!process.argv.includes('--json')) {
   showBanner();

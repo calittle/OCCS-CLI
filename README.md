@@ -669,6 +669,39 @@ output/
   +- crossref
          + crossref.csv
 ```
+## Content authoring
+
+`content` creates OCCS text content and versions from an HTML fragment. Both
+commands require an open ConfigId short name, name, or internal ID, and preserve the supplied fragment verbatim;
+that includes escaped OCCS directives such as `&lt;comms-data&gt;` and
+`&lt;comms-cond&gt;`.
+
+Create a content item, its initial version, and upload its HTML:
+
+```zsh
+occs content create welcome_message \
+  --config-id 90 \
+  --html ./welcome_message.html \
+  --effective-date 2026-09-23
+```
+
+Create a later version. The command follows the OCCS UI's observed sequence:
+create the version, open it by updating its version master record, then upload
+the HTML blob.
+
+```zsh
+occs content version welcome_message 2.0 \
+  --config-id 90 \
+  --from-version 1.0 \
+  --html ./welcome_message-v2.html \
+  --effective-date 2026-09-24
+```
+
+Use `--dry-run` to resolve the ConfigId and validate the request without
+writing to OCCS. Add `--json` when a caller such as ATool needs the complete
+resolved ConfigId and request payload. These are write operations; validate
+against a non-production ConfigId first.
+
 ## Extending
 Each command lives in `lib/` and can be extended independently:
 *	lib/auth.js
