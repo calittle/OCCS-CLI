@@ -600,6 +600,7 @@ Run the Zsh version from the directory where you want `comms-cache/` and
 ```zsh
 zsh examples/refresh-and-mockups.zsh
 zsh examples/refresh-and-mockups.zsh -c /path/to/comms-cache -m /path/to/mockups -p CLP_bills -p CLP_letters
+zsh examples/refresh-and-mockups.zsh --skip-refresh -p CLP_bills
 ```
 
 Run the PowerShell version similarly:

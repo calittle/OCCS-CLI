@@ -6,24 +6,41 @@ setopt null_glob dot_glob
 
 usage() {
   cat <<'EOF'
-Usage: refresh-and-mockups.zsh [-c cache-dir] [-m mockups-dir] [-p package]...
+Usage: refresh-and-mockups.zsh [-s|--skip-refresh] [-c cache-dir] [-m mockups-dir] [-p package]...
 
-Refreshes the cache from CCS and generates mockups. Repeat -p to select packages. With no -p options, the
-default packages are CLP_bills, CLP_letters, CLP_braille, CLP_Emails, and
-CLP_statements.
+Refreshes the cache from CCS and generates mockups. Use -s or --skip-refresh to generate mockups from the
+existing cache only. Repeat -p to select packages. With no -p options, the default packages are CLP_bills,
+CLP_letters, CLP_braille, CLP_Emails, and CLP_statements.
 EOF
 }
 
 cache_dir="./comms-cache"
 mockups_root="./mockups"
 packages=()
+skip_refresh=false
 
-while getopts ':c:m:p:h' option; do
-  case "$option" in
-    c) cache_dir="$OPTARG" ;;
-    m) mockups_root="$OPTARG" ;;
-    p) packages+=("$OPTARG") ;;
-    h)
+while (( $# )); do
+  case "$1" in
+    -c|--cache)
+      (( $# >= 2 )) || { usage >&2; exit 2; }
+      cache_dir="$2"
+      shift 2
+      ;;
+    -m|--mockups)
+      (( $# >= 2 )) || { usage >&2; exit 2; }
+      mockups_root="$2"
+      shift 2
+      ;;
+    -p|--package)
+      (( $# >= 2 )) || { usage >&2; exit 2; }
+      packages+=("$2")
+      shift 2
+      ;;
+    -s|--skip-refresh)
+      skip_refresh=true
+      shift
+      ;;
+    -h|--help)
       usage
       exit 0
       ;;
@@ -43,8 +60,12 @@ command -v occs >/dev/null || {
   exit 1
 }
 mkdir -p "$cache_dir" "$mockups_root"
-print "Refreshing the communications cache..."
-occs get-everything --output "$cache_dir"
+if "$skip_refresh"; then
+  print "Using the existing communications cache..."
+else
+  print "Refreshing the communications cache..."
+  occs get-everything --output "$cache_dir"
+fi
 
 for package_name in "${packages[@]}"; do
   [[ -d "$cache_dir/packages/$package_name" ]] || {
