@@ -267,6 +267,21 @@ To scan only one ConfigID:
 
 `occs-cli preflight --config-id <CONFIG_ID>`
 
+To inspect direct items plus the package-to-document dependencies that can
+block a document change across ConfigIDs:
+
+`occs-cli preflight --config-id <CONFIG_ID> --deep`
+
+`--deep` includes the normal attached-item inventory, every resolvable
+package-to-document-to-layout association with each item's owning ConfigID,
+and the complete Configuration Domain Registry. The registry output lists every
+record type and its `ADD`, `UPDATE`, or `DELETE` operation. Font and Style
+entries are also rendered separately; deleted assets remain listed by UUID and
+`DELETE` operation even when their current display name is unavailable.
+Deep scans can take several minutes for configs with many package, document, or
+layout references.
+It is read-only.
+
 Artifacts are written to the `preflight` subdirectory of the output directory, including a `summary.json` plus one JSON file per scanned ConfigID.
 
 #### create-config
@@ -670,6 +685,46 @@ output/
   +- crossref
          + crossref.csv
 ```
+
+## Document authoring
+
+`document` manages standalone Communication Document master/version records. It
+does not attach documents to packages. Every write requires an open ConfigId.
+
+Create a document and its initial version:
+
+```zsh
+occs document create welcome_letter \
+  --config-id 90 \
+  --company-uuid <company-uuid> \
+  --desc "Welcome letter" \
+  --effective-date 2026-09-26
+```
+
+Duplicate a source version with its document-level layout and style-class
+relationships. The referenced layouts and styles must be editable in the
+target ConfigId:
+
+```zsh
+occs document duplicate existing_letter welcome_letter_v2 \
+  --config-id 90 \
+  --from-version 1.0 \
+  --dry-run
+```
+
+Deletion is deliberately guarded. It first removes style/layout associations
+from every document version, then deletes the document master:
+
+```zsh
+occs document delete welcome_letter \
+  --config-id 90 \
+  --detach-associations \
+  --yes
+```
+
+Use `--dry-run --json` to inspect every create, duplicate, or delete plan
+without writing to OCCS.
+
 ## Content authoring
 
 `content` creates OCCS text content and versions from an HTML fragment. Both
@@ -696,6 +751,17 @@ occs content version welcome_message 2.0 \
   --from-version 1.0 \
   --html ./welcome_message-v2.html \
   --effective-date 2026-09-24
+```
+
+Duplicate one existing content version into a new content item. This preserves
+the source HTML verbatim, including references to other content, and copies its
+style classes and style relationships:
+
+```zsh
+occs content duplicate welcome_message welcome_message_copy \
+  --config-id 90 \
+  --from-version 1.0 \
+  --dry-run
 ```
 
 Use `--dry-run` to resolve the ConfigId and validate the request without

@@ -64,6 +64,7 @@ test('Content-details back links return through their actual parent objects', as
   const { document } = dom.window;
 
   click(document, '[data-node="layout-0"]');
+  assert.equal(document.querySelector('#detail .content-title [data-canonical="copy"]')?.getAttribute('aria-label'), 'Copy layout name');
   assert.equal(document.querySelector('#detail .document-version')?.textContent, 'Ver: 1.0 · Document version description');
   assert.equal(document.querySelector('#detail [data-canonical="version"]'), null);
   click(document, '[data-canonical="contents"]');

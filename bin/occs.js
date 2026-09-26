@@ -4,12 +4,13 @@ import { spawn, spawnSync } from 'child_process';
 import { createRequire } from 'node:module';
 import loginCommand from '../lib/auth.js';
 import { documentCatalogCommand, getDocumentCommand, listDocumentsCommand } from '../lib/documents.js';
+import { documentCreateCommand, documentDeleteCommand, documentDuplicateCommand } from '../lib/documentAuthoring.js';
 import { getPackageCommand, listPackagesCommand } from '../lib/packages.js';
 import { getLayoutCommand, listLayoutsCommand } from '../lib/layouts.js';
-import { contentCreateCommand, contentInspectCommand, contentListCommand, contentReadCommand, contentSaveCommand, contentStylesCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
+import { contentCreateCommand, contentDuplicateCommand, contentInspectCommand, contentListCommand, contentReadCommand, contentSaveCommand, contentStylesCommand, contentVersionCommand, getContentCommand, listContentsCommand } from '../lib/contents.js';
 import { getStyleCommand, listStylesCommand } from '../lib/styles.js';
 import { getChartCommand, listChartsCommand } from '../lib/charts.js';
-import { getFontCommand, listFontsCommand } from '../lib/fonts.js';
+import { fontCreateCommand, getFontCommand, listFontsCommand } from '../lib/fonts.js';
 import { packageGetCommand, packageListCommand, packageSaveCommand } from '../lib/packageMaintenance.js';
 import { catalogCommand } from '../lib/catalog.js';
 import { crossrefCommand } from '../lib/crossRef.js';
@@ -210,6 +211,7 @@ program
   .option('-c, --config-id <id>', 'Only scan a single ConfigID from the open configuration list')
   .option('--list-attached', 'List attached package/document/content items for each scanned ConfigID')
   .option('--show-blockers', 'Show package->document blocker chains, including owner config details when available')
+  .option('--deep', 'List all registry changes, attached items, dependencies, and standalone Font/Style changes')
   .option('-o, --output <dir>', 'Path to output folder', './output/preflight')
   .option('-v, --verbose', 'Verbose logging')
   .action(preflightCommand);
@@ -518,6 +520,28 @@ program
   .option('-v, --verbose', 'Verbose logging')
   .action(listFontsCommand);
 
+const fontCommand = program
+  .command('font')
+  .description('Create communication fonts')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup');
+
+fontCommand
+  .command('create <shortName>')
+  .description('Create a font and upload its binary file')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
+  .requiredOption('--file <path>', 'Font file (.ttf or .otf)')
+  .option('--name <name>', 'Display name (defaults to short name)')
+  .option('--desc <description>', 'Font description', 'none')
+  .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
+  .option('--dry-run', 'Validate the request without changing OCCS')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(fontCreateCommand);
+
 
 program
   .command('list-styles')
@@ -560,6 +584,62 @@ documentsCommand
   .option('--json', 'Write machine-readable JSON to stdout')
   .option('-v, --verbose', 'Verbose logging')
   .action(documentCatalogCommand);
+
+const documentCommand = program
+  .command('document')
+  .description('Create, duplicate, and delete standalone communication documents')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment for saved-session lookup (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup');
+
+documentCommand
+  .command('create <shortName>')
+  .description('Create a standalone document and its initial version')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId name, short name, or internal ID')
+  .requiredOption('--company-uuid <uuid>', 'Company UUID to associate with the document')
+  .option('--company-role <role>', 'Company role (default Marketing)', 'Marketing')
+  .option('--name <name>', 'Document display name')
+  .option('--desc <description>', 'Document description')
+  .option('--version <version>', 'Initial version short name', '1.0')
+  .option('--version-desc <description>', 'Initial version description')
+  .option('--rendering-type <type>', 'Rendering type', 'Document')
+  .option('--exclude-package-page-count', 'Set PackagePageCountExcludeInd')
+  .option('--effective-date <YYYY-MM-DD>', 'Effective date (default today)')
+  .option('--dry-run', 'Build and report the request without writing')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(documentCreateCommand);
+
+documentCommand
+  .command('duplicate <sourceDocument> <targetShortName>')
+  .description('Duplicate one document version, including its layout and style associations')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId name, short name, or internal ID')
+  .requiredOption('--from-version <version>', 'Source document version to duplicate')
+  .option('--version <version>', 'Target version short name')
+  .option('--name <name>', 'Target document display name')
+  .option('--desc <description>', 'Target document description')
+  .option('--version-desc <description>', 'Target version description')
+  .option('--effective-date <YYYY-MM-DD>', 'Effective date (default today)')
+  .option('--dry-run', 'Build and report the request without writing')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(documentDuplicateCommand);
+
+documentCommand
+  .command('delete <documentNameOrUuid>')
+  .description('Detach styles/layouts from every version, then delete a standalone document')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId name, short name, or internal ID')
+  .requiredOption('--detach-associations', 'Detach layout/style associations before deletion')
+  .requiredOption('--yes', 'Confirm permanent deletion')
+  .option('--dry-run', 'Report the deletion plan without writing')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(documentDeleteCommand);
 
 program
   .command('list-layouts')
@@ -638,9 +718,10 @@ contentCommand
 
 contentCommand
   .command('create <shortName>')
-  .description('Create text content, its first version, and its HTML blob')
+  .description('Create content, its first version, and an HTML or Image blob')
   .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
-  .requiredOption('--html <path>', 'HTML fragment to upload')
+  .option('--html <path>', 'HTML fragment to upload (required unless --type Image)')
+  .option('--file <path>', 'Binary file to upload (required for --type Image)')
   .option('--name <name>', 'Display name (defaults to short name)')
   .option('--desc <description>', 'Content description')
   .option('--type <type>', 'Content type', 'Text')
@@ -651,6 +732,22 @@ contentCommand
   .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
   .option('-v, --verbose', 'Include request detail')
   .action(contentCreateCommand);
+
+contentCommand
+  .command('duplicate <sourceContent> <targetShortName>')
+  .description('Duplicate a content version, including its HTML, style classes, and styles')
+  .requiredOption('--config-id <nameOrId>', 'Open OCCS ConfigId short name, name, or internal ID')
+  .requiredOption('--from-version <version>', 'Source content version to duplicate')
+  .option('--name <name>', 'Target display name (defaults to target short name)')
+  .option('--desc <description>', 'Target content description')
+  .option('--version <version>', 'Target initial version short name')
+  .option('--version-desc <description>', 'Target initial version description')
+  .option('--effective-date <date>', 'Effective date (YYYY-MM-DD; defaults to today)')
+  .option('--dry-run', 'Validate the request without changing OCCS')
+  .option('--json', 'Write the full machine-readable result to stdout')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Include request detail')
+  .action(contentDuplicateCommand);
 
 contentCommand
   .command('version <contentNameOrUuid> <version>')
