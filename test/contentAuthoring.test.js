@@ -36,6 +36,16 @@ test('builds the HAR-derived payload for a new content item and first version', 
   });
 });
 
+test('allows a duplicate to preserve the source version description', () => {
+  const payload = buildCreateContentPayload({
+    shortName: 'target-content',
+    version: '1.0',
+    versionDescription: 'Copied source version',
+    effectiveDate: '2026-09-26',
+  });
+  assert.equal(payload.CommunicationContentVersionConfigRec.CommunicationContentVersionConfigInfo.Desc, 'Copied source version');
+});
+
 test('uses the observed en-US language default rather than accepting a caller override', () => {
   const firstVersion = buildCreateContentPayload({
     shortName: 'content', effectiveDate: '2026-09-23', language: 'fr-FR',
