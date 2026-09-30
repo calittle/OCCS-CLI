@@ -1,5 +1,11 @@
 # Notes
 
+## 1.2.1 - 2026-09-30
+
+- Show content styles and their attributes in the interactive mockup inspector.
+- Add a sandboxed HTML preview for cached content, with readable field and conditional placeholders.
+- List only fields used directly by the selected content; fields in conditional child content appear when that child is selected.
+
 ## 1.2.0 - 2026-09-26
 
 - Add content-authoring commands for creating content, adding versions, and duplicating an existing content item or version while retaining its HTML and style relationships.
