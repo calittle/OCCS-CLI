@@ -44,6 +44,18 @@ test('Content-details back links return through their actual parent objects', as
       },
     }],
   });
+  writeJson(path.join(cache, 'styles', 'content-style', 'style.json'), {
+    CommunicationStyleConfigRec: {
+      CommunicationStyleConfigUuid: 'style-1',
+      CommunicationStyleConfigInfo: {
+        ShortName: 'content style',
+        CommunicationStyleConfigStyleAttribute: { Items: [
+          { StyleAttributeName: 'Color', StyleAttributeValue: '#123456' },
+          { StyleAttributeName: 'Font-size', StyleAttributeValue: '12px' },
+        ] },
+      },
+    },
+  });
   for (const [name, blob] of [
     ['parent content', '$Cond{"Content":"child content","Condition":"use child"}'],
     ['child content', ''],
@@ -55,6 +67,13 @@ test('Content-details back links return through their actual parent objects', as
     fs.mkdirSync(versionDir, { recursive: true });
     writeJson(path.join(versionDir, '1.0.json'), {
       CommunicationContentVersionConfigInfo: { ShortName: '1.0', Desc: name === 'parent content' ? 'Parent version description' : '' },
+    });
+    if (name === 'parent content') writeJson(path.join(versionDir, '1.0_expanded.json'), {
+      CommunicationContentVersionStyles: { Items: [{
+        CommunicationStyleConfigCommunicationContentVersionConfigRelRec: {
+          CommunicationStyleConfigCommunicationContentVersionConfigRelInfo: { CommunicationStyleConfigUuid: 'style-1', StyleClassName: 'content-class' },
+        },
+      }] },
     });
     fs.writeFileSync(path.join(versionDir, 'content.blob'), blob);
   }
@@ -74,6 +93,12 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(document.querySelector('#content-detail .content-version')?.textContent, 'Ver: 1.0 · Parent version description');
   assert.equal(document.querySelector('#content-detail [data-canonical="content-version"]'), null);
   assert.equal(document.querySelector('#content-detail [data-canonical="back"]')?.textContent, '← parent layout');
+  assert.equal(document.querySelector('#content-detail h3:last-of-type')?.textContent, 'Styles');
+  assert.equal(document.querySelector('#content-panel .empty')?.textContent, 'Choose a field or style in Content details');
+  assert.equal(document.querySelector('#content-detail [data-canonical="content-style"]')?.textContent, 'content style');
+  click(document, '#content-detail [data-canonical="content-style"]');
+  assert.equal(document.querySelector('#content-panel h2')?.textContent, 'content style');
+  assert.deepEqual([...document.querySelectorAll('#content-panel li')].map(item => item.textContent), ['Color: #123456', 'Font-size: 12px']);
   const condition = document.querySelector('#content-detail [data-canonical="condition"]');
   assert.equal(condition?.getAttribute('aria-expanded'), 'false');
   assert.equal(condition?.nextElementSibling?.hidden, true);
@@ -85,6 +110,7 @@ test('Content-details back links return through their actual parent objects', as
   assert.match(condition?.nextElementSibling?.textContent || '', /use child/);
 
   click(document, '[data-canonical="content"][data-value="child%20content"]');
+  assert.match(document.querySelector('#content-detail')?.textContent || '', /No styles found\./);
   assert.equal(document.querySelector('#content-detail [data-canonical="copy"][data-value="child%20content"]')?.getAttribute('aria-label'), 'Copy child content');
   assert.equal(document.querySelector('#content-detail [data-canonical="back"]')?.textContent, '← parent content');
   click(document, '#content-detail [data-canonical="back"]');
