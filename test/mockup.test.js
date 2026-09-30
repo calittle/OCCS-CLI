@@ -57,8 +57,8 @@ test('Content-details back links return through their actual parent objects', as
     },
   });
   for (const [name, blob] of [
-    ['parent content', '<p>Preview sample $&</p><figure class="table"><table><tbody><tr><td>&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;amount&#34;,&#34;Type&#34;:&#34;Decimal&#34;,&#34;Format&#34;:&#34;#,##0.00&#34;}&lt;/comms-data&gt;</td><td>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;showAmount&#34;,&#34;Text&#34;:&#34;Total&#34;}&lt;/comms-cond&gt;</td></tr></tbody></table></figure><script>window.previewInjected=true</script>$Cond{"Content":"child content","Condition":"use child"}'],
-    ['child content', ''],
+    ['parent content', '<p>Preview sample $&</p><figure class="table"><table><tbody><tr><td>&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;,&#34;Type&#34;:&#34;Decimal&#34;,&#34;Format&#34;:&#34;#,##0.00&#34;}&lt;/comms-data&gt;</td><td>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;showAmount&#34;,&#34;Text&#34;:&#34;Total&#34;}&lt;/comms-cond&gt;</td></tr></tbody></table></figure><script>window.previewInjected=true</script>$Cond{"Content":"child content","Condition":"use child"}'],
+    ['child content', '$Data{"Id":"child field"}'],
   ]) {
     writeJson(path.join(cache, 'contents', name, 'content.json'), {
       CommunicationContentConfigRec: { CommunicationContentConfigInfo: { ShortName: name } },
@@ -111,8 +111,8 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(document.querySelector('#content-preview-title')?.textContent, 'parent content');
   assert.match(document.querySelector('#content-preview-frame')?.srcdoc || '', /<p>Preview sample \$&<\/p>/);
   const previewDocument = new JSDOM(document.querySelector('#content-preview-frame').srcdoc).window.document;
-  assert.deepEqual([...previewDocument.querySelectorAll('table td')].map(cell => cell.textContent), ['amount', 'Total']);
-  assert.match(previewDocument.querySelector('.preview-token')?.getAttribute('title') || '', /Field: amount · Type: Decimal · Format: #,##0\.00/);
+  assert.deepEqual([...previewDocument.querySelectorAll('table td')].map(cell => cell.textContent), ['parent field', 'Total']);
+  assert.match(previewDocument.querySelector('.preview-token')?.getAttribute('title') || '', /Field: parent field · Type: Decimal · Format: #,##0\.00/);
   assert.equal(previewDocument.querySelector('.preview-conditional')?.getAttribute('title'), 'showAmount');
   assert.match(previewDocument.querySelector('style')?.textContent || '', /table\{[^}]*table-layout:fixed/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /th,td\{[^}]*border:1px solid/);
@@ -127,11 +127,14 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(condition?.nextElementSibling?.hidden, false);
   assert.equal(dom.window.getComputedStyle(condition?.nextElementSibling).display, 'block');
   assert.match(condition?.nextElementSibling?.textContent || '', /use child/);
+  assert.match(document.querySelector('#content-detail')?.textContent || '', /parent field/);
+  assert.doesNotMatch(document.querySelector('#content-detail')?.textContent || '', /child field/);
 
   click(document, '[data-canonical="content"][data-value="child%20content"]');
-  assert.equal(document.querySelector('#content-detail [data-canonical="preview"]'), null);
+  assert.ok(document.querySelector('#content-detail [data-canonical="preview"]'));
   assert.match(document.querySelector('#content-detail')?.textContent || '', /No styles found\./);
   assert.equal(document.querySelector('#content-detail [data-canonical="copy"][data-value="child%20content"]')?.getAttribute('aria-label'), 'Copy child content');
+  assert.match(document.querySelector('#content-detail')?.textContent || '', /child field/);
   assert.equal(document.querySelector('#content-detail [data-canonical="back"]')?.textContent, '← parent content');
   click(document, '#content-detail [data-canonical="back"]');
   assert.equal(document.querySelector('#content-detail h2')?.textContent, 'parent content');
