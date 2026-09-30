@@ -45,8 +45,8 @@ test('Content-details back links return through their actual parent objects', as
     }],
   });
   for (const [name, blob] of [
-    ['parent content', '$Cond{"Content":"child content","Condition":"use child"}'],
-    ['child content', ''],
+    ['parent content', '$Data{"Id":"parent field"}$Cond{"Content":"child content","Condition":"use child"}'],
+    ['child content', '$Data{"Id":"child field"}'],
   ]) {
     writeJson(path.join(cache, 'contents', name, 'content.json'), {
       CommunicationContentConfigRec: { CommunicationContentConfigInfo: { ShortName: name } },
@@ -83,9 +83,12 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(condition?.nextElementSibling?.hidden, false);
   assert.equal(dom.window.getComputedStyle(condition?.nextElementSibling).display, 'block');
   assert.match(condition?.nextElementSibling?.textContent || '', /use child/);
+  assert.match(document.querySelector('#content-detail')?.textContent || '', /parent field/);
+  assert.doesNotMatch(document.querySelector('#content-detail')?.textContent || '', /child field/);
 
   click(document, '[data-canonical="content"][data-value="child%20content"]');
   assert.equal(document.querySelector('#content-detail [data-canonical="copy"][data-value="child%20content"]')?.getAttribute('aria-label'), 'Copy child content');
+  assert.match(document.querySelector('#content-detail')?.textContent || '', /child field/);
   assert.equal(document.querySelector('#content-detail [data-canonical="back"]')?.textContent, '← parent content');
   click(document, '#content-detail [data-canonical="back"]');
   assert.equal(document.querySelector('#content-detail h2')?.textContent, 'parent content');
