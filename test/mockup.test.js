@@ -142,4 +142,147 @@ test('Content-details back links return through their actual parent objects', as
   click(document, '#content-detail [data-canonical="back"]');
   assert.equal(document.querySelector('#content-detail h2')?.textContent, 'parent layout');
   assert.match(document.querySelector('#content-detail')?.textContent || '', /parent content/);
+
+  // Missing package/AT definitions must never be described as top-level fields.
+  click(document, '[data-canonical="content"][data-value="parent%20content"]');
+  assert.equal(document.querySelector('#content-detail .field-warning')?.textContent, 'Definition not found');
+  click(document, '[data-canonical="field"]');
+  assert.match(document.querySelector('#content-panel').textContent, /Field definition was not found in the Assembly Template/);
+  assert.doesNotMatch(document.querySelector('#content-panel').textContent, /Top-level field definition/);
+
+  writeJson(path.join(cache, 'packages', 'test-package', 'versions', '1.0', 'AssemblyTemplate.json'), {
+    Fields: [{ Name: 'parent field', Path: '$.parent' }],
+    Documents: [{ $$Id: 'test document', Condition: '$[?(@.amount < 100 && @.kind == \"bill\")]', Layouts: [
+      { $$Id: 'parent layout', Contents: [
+        { $$Id: 'parent content', Iteration: { $$Id: 'rows', Path: '$.rows', Fields: [{ Name: 'inherited field', Path: '$.inherited' }] } },
+        { $$Id: 'child content', Iteration: { $$Id: 'child rows', Path: '$.children', Fields: [{ Name: 'child field', Path: '$.child' }, { Name: 'pathless field' }] } },
+      ] },
+      { $$Id: 'unrelated layout', Contents: [{ $$Id: 'child content', Iteration: { Fields: [{ Name: 'missing field', Path: '$.unrelated' }] } }] },
+    ] }],
+  });
+  fs.appendFileSync(path.join(cache, 'contents', 'child content', 'versions', '1.0', 'content.blob'), '$Data{"Id":"missing field"}$Data{"Id":"inherited field"}$Data{"Id":"pathless field"}$Data{"Id":"child rows"}$Data{"Id":"PackagePageNum"}$Data{"Id":"PackagePageCount"}$Data{"Id":"GRIDPAGENUMBER"}');
+  await mockupCommand('test-document', { cache, output, package: 'test-package' });
+  const resolvedDom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
+  t.after(() => { dom.window.close(); resolvedDom.window.close(); });
+  const resolved = resolvedDom.window.document;
+  assert.ok(resolved.querySelector('[data-node="layout-0"] > .warning-icon'));
+  assert.equal(resolved.querySelector('[data-node="document"] > .warning-icon'), null);
+  click(resolved, '[data-node="document"]');
+  assert.equal(resolved.querySelector('#detail .warning-icon'), null);
+  assert.equal(resolved.querySelector('#content-detail .package-version').textContent, 'Ver: 1.0');
+  assert.equal(resolved.querySelector('#content-detail .chip:not(button)'), null);
+  const packageDialog = resolved.querySelector('#package-dialog');
+  packageDialog.showModal = function () { this.open = true; };
+  click(resolved, '#content-detail [data-canonical="package-condition"]');
+  assert.equal(packageDialog.open, true);
+  assert.equal(resolved.querySelector('#package-condition').textContent, '$[?(@.amount < 100 && @.kind == "bill")]');
+  assert.equal(packageDialog.querySelector('h2').textContent, 'AT Document Trigger:');
+  assert.equal(packageDialog.querySelector('#package-summary, .path'), null);
+  assert.equal(packageDialog.querySelector('button').textContent, '×');
+  assert.equal(packageDialog.querySelector('button').getAttribute('aria-label'), 'Close document trigger');
+  assert.equal(packageDialog.querySelector('form').getAttribute('method'), 'dialog');
+  assert.equal(resolved.querySelector('#detail [data-canonical="condition"]'), null);
+  assert.doesNotMatch(resolved.querySelector('#detail').textContent, /Condition:/);
+  assert.equal(resolved.querySelector('#content-detail .inspector-row').textContent, 'Condition: conditional');
+  assert.doesNotMatch(resolved.querySelector('#content-detail').textContent, /Document condition|Open full condition|This Assembly Template expression/);
+
+  click(resolved, '[data-canonical="layouts"]');
+  assert.ok(resolved.querySelector('[data-canonical="layout"][data-value="layout-0"] + .warning-icon'));
+  click(resolved, '[data-node="layout-0"]');
+  assert.ok(resolved.querySelector('[data-canonical="contents"] + .warning-icon'));
+  assert.equal(resolved.querySelector('[data-canonical="layouts"] + .warning-icon'), null);
+  click(resolved, '[data-canonical="contents"]');
+  assert.ok(resolved.querySelector('[data-canonical="content"][data-value="parent%20content"] + .warning-icon'));
+  click(resolved, '[data-canonical="content"][data-value="parent%20content"]');
+  assert.ok(resolved.querySelector('[data-canonical="content"][data-value="child%20content"] + .warning-icon'));
+  assert.equal(resolved.querySelector('#content-detail .field-warning'), null);
+  click(resolved, '[data-canonical="field"]');
+  assert.match(resolved.querySelector('#content-panel').textContent, /Top-level field definition/);
+  assert.match(resolved.querySelector('#content-panel').textContent, /\$\.parent/);
+  assert.doesNotMatch(resolved.querySelector('#content-panel').textContent, /Parent content/);
+  click(resolved, '[data-canonical="content"][data-value="child%20content"]');
+  assert.equal(resolved.querySelectorAll('#content-detail .field-warning').length, 1);
+  assert.equal(resolved.querySelector('#content-detail .field-warning').previousElementSibling.textContent, 'missing field');
+  for (const [field, parent, fieldPath] of [['child field', 'child content', '$.child'], ['inherited field', 'parent content', '$.inherited']]) {
+    click(resolved, '[data-canonical="field"][data-value="'+encodeURIComponent(field)+'"]');
+    const panel = resolved.querySelector('#content-panel');
+    assert.ok(panel.textContent.includes(fieldPath));
+    assert.ok(panel.textContent.includes('Parent content'+parent));
+    assert.ok(panel.textContent.includes('Parent layoutparent layout'));
+    assert.doesNotMatch(panel.textContent, /Top-level field definition/);
+  }
+  click(resolved, '[data-canonical="field"][data-value="child%20rows"]');
+  assert.equal(resolved.querySelector('[data-canonical="field"][data-value="child%20rows"]').nextElementSibling, null);
+  assert.match(resolved.querySelector('#content-panel').textContent, /Iterator reference defined in the Assembly Template/);
+  assert.match(resolved.querySelector('#content-panel').textContent, /\$\.children/);
+  assert.match(resolved.querySelector('#content-panel').textContent, /Parent contentchild content/);
+  assert.match(resolved.querySelector('#content-panel').textContent, /Parent layoutparent layout/);
+  assert.doesNotMatch(resolved.querySelector('#content-panel').textContent, /Field path|not found|Top-level/);
+  click(resolved, '[data-canonical="field"][data-value="missing%20field"]');
+  assert.match(resolved.querySelector('#content-panel').textContent, /associated iteration\/layout/);
+  assert.doesNotMatch(resolved.querySelector('#content-panel').textContent, /Top-level field definition|\$\.unrelated/);
+
+  // Once every field resolves, no parent should retain a warning. A conditional
+  // cycle must terminate, and inherited fields must not produce false warnings.
+  const assemblyFile = path.join(cache, 'packages', 'test-package', 'versions', '1.0', 'AssemblyTemplate.json');
+  const assembly = JSON.parse(fs.readFileSync(assemblyFile, 'utf8'));
+  assembly.Fields.push({ Name: 'missing field', Path: '$.nowDefined' });
+  writeJson(assemblyFile, assembly);
+  fs.appendFileSync(path.join(cache, 'contents', 'child content', 'versions', '1.0', 'content.blob'), '$Cond{"Content":"parent content","Condition":"cycle"}');
+  await mockupCommand('test-document', { cache, output, package: 'test-package' });
+  const healthyDom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
+  t.after(() => healthyDom.window.close());
+  const healthy = healthyDom.window.document;
+  assert.equal(healthy.querySelector('.warning-icon'), null);
+  click(healthy, '[data-node="layout-0"]');
+  click(healthy, '[data-canonical="contents"]');
+  click(healthy, '[data-canonical="content"][data-value="parent%20content"]');
+  assert.equal(healthy.querySelector('.warning-icon'), null);
+  click(healthy, '[data-canonical="content"][data-value="child%20content"]');
+  assert.equal(healthy.querySelector('.warning-icon, .field-warning'), null);
+  assert.equal(healthy.querySelectorAll('#content-detail .system-field').length, 3);
+  for (const name of ['PackagePageNum', 'PackagePageCount', 'GRIDPAGENUMBER']) {
+    const field = healthy.querySelector('[data-canonical="field"][data-value="'+name+'"]');
+    assert.equal(field.nextElementSibling.textContent, 'System-generated');
+    click(healthy, '[data-canonical="field"][data-value="'+name+'"]');
+    assert.match(healthy.querySelector('#content-panel').textContent, /System-generated field/);
+    assert.match(healthy.querySelector('#content-panel').textContent, /No definition .* is required/);
+    assert.doesNotMatch(healthy.querySelector('#content-panel').textContent, /not found|Top-level field definition/);
+  }
+
+
+  // Never-triggered content suppresses its own and nested warnings, including
+  // parent indicators. The same rule applies to an entire disabled layout.
+  assembly.Fields = [];
+  assembly.Documents[0].Layouts = [];
+  writeJson(assemblyFile, assembly);
+  const layoutFile = path.join(cache, 'layouts', 'parent-layout', 'layout.json');
+  const layout = JSON.parse(fs.readFileSync(layoutFile, 'utf8'));
+  layout.CommunicationLayoutContents[0].CommunicationLayoutConfigCommunicationContentConfigRelRec.CommunicationLayoutConfigCommunicationContentConfigRelInfo.ContentAlwaysTriggerInd = false;
+  writeJson(layoutFile, layout);
+  for (const disabled of ['content', 'layout']) {
+    if (disabled === 'layout') {
+      layout.CommunicationLayoutContents[0].CommunicationLayoutConfigCommunicationContentConfigRelRec.CommunicationLayoutConfigCommunicationContentConfigRelInfo.ContentAlwaysTriggerInd = true;
+      writeJson(layoutFile, layout);
+      const documentFile = path.join(cache, 'documents', 'test-document', 'versions', '1.0.json');
+      const doc = JSON.parse(fs.readFileSync(documentFile, 'utf8'));
+      doc.CommunicationDocumentVersionLayouts[0].CommunicationDocumentVersionConfigCommunicationLayoutConfigRelRec.CommunicationDocumentVersionConfigCommunicationLayoutConfigRelInfo.LayoutAlwaysTriggerInd = false;
+      writeJson(documentFile, doc);
+    }
+    await mockupCommand('test-document', { cache, output, package: 'test-package' });
+    const inactiveDom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
+    t.after(() => inactiveDom.window.close());
+    const inactive = inactiveDom.window.document;
+    assert.equal(inactive.querySelector('.warning-icon'), null, disabled);
+    click(inactive, '[data-node="layout-0"]');
+    click(inactive, '[data-canonical="contents"]');
+    assert.equal(inactive.querySelector('.warning-icon'), null, disabled);
+    click(inactive, '[data-canonical="content"][data-value="parent%20content"]');
+    assert.equal(inactive.querySelector('.warning-icon, .field-warning'), null, disabled);
+    click(inactive, '[data-canonical="field"]');
+    assert.match(inactive.querySelector('#content-panel').textContent, /never triggered/);
+    click(inactive, '[data-canonical="content"][data-value="child%20content"]');
+    assert.equal(inactive.querySelector('.warning-icon, .field-warning'), null, disabled);
+  }
+
 });
