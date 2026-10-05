@@ -1,5 +1,11 @@
 # Notes
 
+## 1.2.2 - 2026-10-05
+
+- Resolve mockup fields from the matching content or enclosing content iteration and layout, and identify system-generated fields separately.
+- Show unresolved field warnings on affected content and parent layouts, while suppressing warnings for content that never triggers.
+- Show the Assembly Template document trigger condition in the mockup inspector.
+
 ## 1.2.1 - 2026-09-30
 
 - Show content styles and their attributes in the interactive mockup inspector.
