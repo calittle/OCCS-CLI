@@ -1,5 +1,10 @@
 # Notes
 
+## 1.2.3 - 2026-10-08
+
+- Shorten conditional placeholders in Content HTML previews to `Cond`, with tooltips that show the condition or referenced content when available.
+- Show each conditional's available condition, referenced content, and text at the bottom of the preview when its chip is selected.
+
 ## 1.2.2 - 2026-10-05
 
 - Resolve mockup fields from the matching content or enclosing content iteration and layout, and identify system-generated fields separately.
