@@ -78,7 +78,8 @@ test('Content-details back links return through their actual parent objects', as
     fs.writeFileSync(path.join(versionDir, 'content.blob'), blob);
   }
   fs.appendFileSync(path.join(cache, 'contents', 'parent content', 'versions', '1.0', 'content.blob'),
-    '<p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;isEnglishBill empty false &amp;&amp; &#39;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#39; !&#61; &#39;&#39;&#34;,&#34;Text&#34;:&#34;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#34;}&lt;/comms-cond&gt;</p>');
+    '<p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;isEnglishBill empty false &amp;&amp; &#39;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#39; !&#61; &#39;&#39;&#34;,&#34;Text&#34;:&#34;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#34;}&lt;/comms-cond&gt;</p>' +
+    '<p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;GRIDPAGENUMBER ==1 &amp;&amp; parent field empty false&#34;,&#34;Text&#34;:&#34;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;,&#34;Type&#34;:&#34;Text&#34;,&#34;Format&#34;:&#34;plain&#34;}&lt;/comms-data&gt; remainder&#34;}&lt;/comms-cond&gt;</p>');
 
   await mockupCommand('test-document', { cache, output });
   const dom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
@@ -93,6 +94,14 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(document.querySelector('#detail [data-canonical="version"]'), null);
   click(document, '[data-canonical="contents"]');
   assert.equal(document.querySelector('[data-canonical="copy"][data-value="parent%20content"]')?.getAttribute('aria-label'), 'Copy parent content');
+  const listPreview = document.querySelector('#content-detail li [data-canonical="preview"]');
+  assert.equal(listPreview?.getAttribute('aria-label'), 'Preview HTML for parent content');
+  assert.equal(listPreview?.dataset.value, 'parent%20content');
+  click(document, '#content-detail li [data-canonical="preview"]');
+  assert.equal(document.querySelector('#content-preview-dialog').open, true);
+  assert.equal(document.querySelector('#content-preview-title')?.textContent, 'parent content');
+  assert.match(document.querySelector('#content-preview-frame')?.srcdoc || '', /<p>Preview sample \$&<\/p>/);
+  assert.equal(document.querySelector('#content-detail .path')?.textContent, 'Content details › Contents');
   click(document, '[data-canonical="content"][data-value="parent%20content"]');
   assert.equal(document.querySelector('#content-detail .content-title [data-canonical="copy"]')?.getAttribute('aria-label'), 'Copy parent content');
   assert.equal(document.querySelector('#content-detail .content-version')?.textContent, 'Ver: 1.0 · Parent version description');
@@ -120,7 +129,7 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(conditionalChip?.getAttribute('href'), '#preview-condition-1');
   assert.equal(conditionalChip?.getAttribute('aria-label'), 'Show conditional details');
   assert.equal(previewDocument.querySelector('#preview-condition-1')?.textContent, 'Cond 1Condition: showAmountText: Total');
-  assert.equal(previewDocument.querySelectorAll('.preview-conditional').length, 4);
+  assert.equal(previewDocument.querySelectorAll('.preview-conditional').length, 5);
   assert.equal(previewDocument.querySelectorAll('.preview-conditional')[1]?.getAttribute('href'), '#preview-condition-2');
   assert.equal(previewDocument.querySelector('#preview-condition-2')?.textContent, 'Cond 2Condition: use childContent: child content');
   assert.equal(previewDocument.querySelectorAll('.preview-conditional')[2]?.getAttribute('title'), 'Select to view conditional details');
@@ -128,6 +137,7 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(previewDocument.querySelectorAll('.preview-conditional')[3]?.getAttribute('href'), '#preview-condition-4');
   assert.match(previewDocument.querySelector('#preview-condition-4')?.textContent || '', /Condition: isEnglishBill empty false && '\[parent field\]' != ''/);
   assert.match(previewDocument.querySelector('#preview-condition-4')?.textContent || '', /Text: \[parent field\]/);
+  assert.equal(previewDocument.querySelector('#preview-condition-5')?.textContent, 'Cond 5Condition: GRIDPAGENUMBER ==1 && parent field empty falseText: [parent field · Type: Text · Format: plain] remainder');
   assert.doesNotMatch(previewDocument.body.textContent, /No condition or content was recorded/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /\.preview-condition-detail\.selected\{display:block/);
   assert.equal(previewDocument.body.lastElementChild?.className, 'preview-conditions');
