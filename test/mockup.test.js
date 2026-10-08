@@ -57,7 +57,7 @@ test('Content-details back links return through their actual parent objects', as
     },
   });
   for (const [name, blob] of [
-    ['parent content', '<p>Preview sample $&</p><figure class="table"><table><tbody><tr><td>&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;,&#34;Type&#34;:&#34;Decimal&#34;,&#34;Format&#34;:&#34;#,##0.00&#34;}&lt;/comms-data&gt;</td><td>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;showAmount&#34;,&#34;Text&#34;:&#34;Total&#34;}&lt;/comms-cond&gt;</td></tr></tbody></table></figure><script>window.previewInjected=true</script>$Cond{"Content":"child content","Condition":"use child"}'],
+    ['parent content', '<p>Preview sample $&</p><figure class="table"><table><tbody><tr><td>&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;,&#34;Type&#34;:&#34;Decimal&#34;,&#34;Format&#34;:&#34;#,##0.00&#34;}&lt;/comms-data&gt;</td><td>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;showAmount&#34;,&#34;Text&#34;:&#34;Total&#34;}&lt;/comms-cond&gt;</td></tr></tbody></table></figure><p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;use child&#34;,&#34;Content&#34;:&#34;child content&#34;}&lt;/comms-cond&gt;</p><p>&lt;comms-cond&gt;$Cond{&#34;Text&#34;:&#34;ConditionalContent&#34;}&lt;/comms-cond&gt;</p><script>window.previewInjected=true</script>$Cond{"Content":"child content","Condition":"use child"}'],
     ['child content', '$Data{"Id":"child field"}'],
   ]) {
     writeJson(path.join(cache, 'contents', name, 'content.json'), {
@@ -111,9 +111,19 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(document.querySelector('#content-preview-title')?.textContent, 'parent content');
   assert.match(document.querySelector('#content-preview-frame')?.srcdoc || '', /<p>Preview sample \$&<\/p>/);
   const previewDocument = new JSDOM(document.querySelector('#content-preview-frame').srcdoc).window.document;
-  assert.deepEqual([...previewDocument.querySelectorAll('table td')].map(cell => cell.textContent), ['parent field', 'Total']);
+  assert.deepEqual([...previewDocument.querySelectorAll('table td')].map(cell => cell.textContent), ['parent field', 'Cond']);
   assert.match(previewDocument.querySelector('.preview-token')?.getAttribute('title') || '', /Field: parent field · Type: Decimal · Format: #,##0\.00/);
-  assert.equal(previewDocument.querySelector('.preview-conditional')?.getAttribute('title'), 'showAmount');
+  const conditionalChip = previewDocument.querySelector('.preview-conditional');
+  assert.equal(conditionalChip?.getAttribute('title'), 'Condition: showAmount');
+  assert.equal(conditionalChip?.getAttribute('href'), '#preview-condition-1');
+  assert.equal(conditionalChip?.getAttribute('aria-label'), 'Show conditional details');
+  assert.equal(previewDocument.querySelector('#preview-condition-1')?.textContent, 'Cond 1Condition: showAmountText: Total');
+  assert.equal(previewDocument.querySelectorAll('.preview-conditional').length, 3);
+  assert.equal(previewDocument.querySelectorAll('.preview-conditional')[1]?.getAttribute('href'), '#preview-condition-2');
+  assert.equal(previewDocument.querySelector('#preview-condition-2')?.textContent, 'Cond 2Condition: use childContent: child content');
+  assert.equal(previewDocument.querySelectorAll('.preview-conditional')[2]?.getAttribute('title'), 'Select to view conditional details');
+  assert.equal(previewDocument.querySelector('#preview-condition-3')?.textContent, 'Cond 3Text: ConditionalContent');
+  assert.equal(previewDocument.body.lastElementChild?.className, 'preview-conditions');
   assert.match(previewDocument.querySelector('style')?.textContent || '', /table\{[^}]*table-layout:fixed/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /th,td\{[^}]*border:1px solid/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /th,td\{[^}]*width:auto!important/);
