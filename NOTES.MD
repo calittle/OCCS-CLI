@@ -3,7 +3,7 @@
 ## 1.2.3 - 2026-10-08
 
 - Shorten conditional placeholders in Content HTML previews to `Cond`, with tooltips that show the condition or referenced content when available.
-- Show each conditional's available condition, referenced content, and text at the bottom of the preview when its chip is selected.
+- Click a Cond chip to show only its matching condition, referenced content, and text below the preview, including conditions with embedded field references.
 
 ## 1.2.2 - 2026-10-05
 

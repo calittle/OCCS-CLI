@@ -77,6 +77,8 @@ test('Content-details back links return through their actual parent objects', as
     });
     fs.writeFileSync(path.join(versionDir, 'content.blob'), blob);
   }
+  fs.appendFileSync(path.join(cache, 'contents', 'parent content', 'versions', '1.0', 'content.blob'),
+    '<p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;isEnglishBill empty false &amp;&amp; &#39;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#39; !&#61; &#39;&#39;&#34;,&#34;Text&#34;:&#34;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#34;}&lt;/comms-cond&gt;</p>');
 
   await mockupCommand('test-document', { cache, output });
   const dom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
@@ -118,16 +120,21 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(conditionalChip?.getAttribute('href'), '#preview-condition-1');
   assert.equal(conditionalChip?.getAttribute('aria-label'), 'Show conditional details');
   assert.equal(previewDocument.querySelector('#preview-condition-1')?.textContent, 'Cond 1Condition: showAmountText: Total');
-  assert.equal(previewDocument.querySelectorAll('.preview-conditional').length, 3);
+  assert.equal(previewDocument.querySelectorAll('.preview-conditional').length, 4);
   assert.equal(previewDocument.querySelectorAll('.preview-conditional')[1]?.getAttribute('href'), '#preview-condition-2');
   assert.equal(previewDocument.querySelector('#preview-condition-2')?.textContent, 'Cond 2Condition: use childContent: child content');
   assert.equal(previewDocument.querySelectorAll('.preview-conditional')[2]?.getAttribute('title'), 'Select to view conditional details');
   assert.equal(previewDocument.querySelector('#preview-condition-3')?.textContent, 'Cond 3Text: ConditionalContent');
+  assert.equal(previewDocument.querySelectorAll('.preview-conditional')[3]?.getAttribute('href'), '#preview-condition-4');
+  assert.match(previewDocument.querySelector('#preview-condition-4')?.textContent || '', /Condition: isEnglishBill empty false && '\[parent field\]' != ''/);
+  assert.match(previewDocument.querySelector('#preview-condition-4')?.textContent || '', /Text: \[parent field\]/);
+  assert.doesNotMatch(previewDocument.body.textContent, /No condition or content was recorded/);
+  assert.match(previewDocument.querySelector('style')?.textContent || '', /\.preview-condition-detail\.selected\{display:block/);
   assert.equal(previewDocument.body.lastElementChild?.className, 'preview-conditions');
   assert.match(previewDocument.querySelector('style')?.textContent || '', /table\{[^}]*table-layout:fixed/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /th,td\{[^}]*border:1px solid/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /th,td\{[^}]*width:auto!important/);
-  assert.equal(document.querySelector('#content-preview-frame')?.getAttribute('sandbox'), '');
+  assert.equal(document.querySelector('#content-preview-frame')?.getAttribute('sandbox'), 'allow-same-origin');
   const condition = document.querySelector('#content-detail [data-canonical="condition"]');
   assert.equal(condition?.getAttribute('aria-expanded'), 'false');
   assert.equal(condition?.nextElementSibling?.hidden, true);
