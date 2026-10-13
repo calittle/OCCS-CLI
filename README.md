@@ -215,6 +215,10 @@ The name must match an artifact short name exactly (case-insensitively). The CLI
 uses a server-side short-name search to avoid downloading unrelated artifacts,
 then rejects partial or ambiguous matches.
 
+Single-item downloads replace only the requested artifact's folder. Other cached
+artifacts in the output directory are preserved. Downloads are staged first; a
+failed download leaves the previous cached copy intact.
+
 #### package
 
 Maintain communication packages with a small ATool-friendly command surface.
