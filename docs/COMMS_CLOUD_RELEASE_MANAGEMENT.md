@@ -55,7 +55,7 @@ The compare mode is particularly useful immediately after Non-Production to Pre-
 4. Confirm the communication package short name for each input.
 5. Install the local PDF utilities used by the smoke command: Poppler (`pdftoppm` and `pdfinfo`) is required for thumbnails and PDF page counts. For two-environment visual comparison, also install ImageMagick (`identify` and `compare`). Ensure these commands are on `PATH` before running the suite.
 
-On macOS, install them with `brew install poppler imagemagick`; on Ubuntu/Debian, use `sudo apt install poppler-utils imagemagick`. On Windows, install both tools and add their executable directories to `PATH`. Confirm the installation with `pdftoppm -v`, `pdfinfo -v`, and, when comparing environments, `identify -version` and `compare -version`.
+On macOS, install them with `brew install poppler imagemagick`; on Ubuntu/Debian, use `sudo apt install poppler-utils imagemagick`. On Windows, follow the [Poppler installation steps](../README.md#poppler-on-windows) and [ImageMagick installation steps](../README.md#imagemagick-on-windows), including the legacy `identify.exe`/`compare.exe` utilities and `PATH` checks. Confirm the installation with `pdftoppm -v`, `pdfinfo -v`, and, when comparing environments, `identify -version` and `compare -version`.
 
 For the sample bill suite, the representative bill samples are RT, NRT, BULK, and PLT. Letter and eBill inputs cover their respective packages.
 
