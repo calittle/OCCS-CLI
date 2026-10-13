@@ -57,7 +57,7 @@ test('Content-details back links return through their actual parent objects', as
     },
   });
   for (const [name, blob] of [
-    ['parent content', '<p>Preview sample $&</p><figure class="table"><table><tbody><tr><td>&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;,&#34;Type&#34;:&#34;Decimal&#34;,&#34;Format&#34;:&#34;#,##0.00&#34;}&lt;/comms-data&gt;</td><td>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;showAmount&#34;,&#34;Text&#34;:&#34;Total&#34;}&lt;/comms-cond&gt;</td></tr></tbody></table></figure><p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;use child&#34;,&#34;Content&#34;:&#34;child content&#34;}&lt;/comms-cond&gt;</p><p>&lt;comms-cond&gt;$Cond{&#34;Text&#34;:&#34;ConditionalContent&#34;}&lt;/comms-cond&gt;</p><script>window.previewInjected=true</script>$Cond{"Content":"child content","Condition":"use child"}'],
+    ['parent content', '<p>Preview sample $&</p><figure class="table" style="float:left;height:20px"><table style="float:left;height:20px"><tbody><tr><td>&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;,&#34;Type&#34;:&#34;Decimal&#34;,&#34;Format&#34;:&#34;#,##0.00&#34;}&lt;/comms-data&gt;</td><td>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;showAmount&#34;,&#34;Text&#34;:&#34;Total&#34;}&lt;/comms-cond&gt;</td></tr></tbody></table></figure><p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;use child&#34;,&#34;Content&#34;:&#34;child content&#34;}&lt;/comms-cond&gt;</p><p>&lt;comms-cond&gt;$Cond{&#34;Text&#34;:&#34;ConditionalContent&#34;}&lt;/comms-cond&gt;</p><script>window.previewInjected=true</script>$Cond{"Content":"child content","Condition":"use child"}'],
     ['child content', '$Data{"Id":"child field"}'],
   ]) {
     writeJson(path.join(cache, 'contents', name, 'content.json'), {
@@ -79,7 +79,8 @@ test('Content-details back links return through their actual parent objects', as
   }
   fs.appendFileSync(path.join(cache, 'contents', 'parent content', 'versions', '1.0', 'content.blob'),
     '<p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;isEnglishBill empty false &amp;&amp; &#39;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#39; !&#61; &#39;&#39;&#34;,&#34;Text&#34;:&#34;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#34;}&lt;/comms-cond&gt;</p>' +
-    '<p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;GRIDPAGENUMBER ==1 &amp;&amp; parent field empty false&#34;,&#34;Text&#34;:&#34;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;,&#34;Type&#34;:&#34;Text&#34;,&#34;Format&#34;:&#34;plain&#34;}&lt;/comms-data&gt; remainder&#34;}&lt;/comms-cond&gt;</p>');
+    '<p><strong>&lt;comms-data&gt;$Data {&#34;Id&#34;:&#34;DC14&#34;,&#34;Type&#34;:&#34;Date&#34;,&#34;Format&#34;:&#34;dd-MM-yy&#34;}&lt;/comms-data&gt;</strong></p>' +
+    '<p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;GRIDPAGENUMBER ==1 &amp;&amp; parent field empty false&#34;,&#34;Text&#34;:&#34;&lt;comms-data&gt;$Data {&#34;Id&#34;:&#34;parent field&#34;,&#34;Type&#34;:&#34;Text&#34;,&#34;Format&#34;:&#34;plain&#34;}&lt;/comms-data&gt; remainder&#34;}&lt;/comms-cond&gt;</p>');
 
   await mockupCommand('test-document', { cache, output });
   const dom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
@@ -124,6 +125,11 @@ test('Content-details back links return through their actual parent objects', as
   const previewDocument = new JSDOM(document.querySelector('#content-preview-frame').srcdoc).window.document;
   assert.deepEqual([...previewDocument.querySelectorAll('table td')].map(cell => cell.textContent), ['parent field', 'Cond']);
   assert.match(previewDocument.querySelector('.preview-token')?.getAttribute('title') || '', /Field: parent field · Type: Decimal · Format: #,##0\.00/);
+  const dateChip = previewDocument.querySelector('strong .preview-token');
+  assert.equal(dateChip?.textContent, 'DC14');
+  assert.equal(dateChip?.getAttribute('title'), 'Field: DC14 · Type: Date · Format: dd-MM-yy');
+  assert.doesNotMatch(previewDocument.body.textContent, /\$Data\s*\{|<comms-data>/);
+  assert.ok(document.querySelector('#content-detail [data-canonical="field"][data-value="DC14"]'));
   const conditionalChip = previewDocument.querySelector('.preview-conditional');
   assert.equal(conditionalChip?.getAttribute('title'), 'Condition: showAmount');
   assert.equal(conditionalChip?.getAttribute('href'), '#preview-condition-1');
@@ -141,6 +147,13 @@ test('Content-details back links return through their actual parent objects', as
   assert.doesNotMatch(previewDocument.body.textContent, /No condition or content was recorded/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /\.preview-condition-detail\.selected\{display:block/);
   assert.equal(previewDocument.body.lastElementChild?.className, 'preview-conditions');
+  assert.equal(previewDocument.body.firstElementChild?.className, 'preview-markup');
+  assert.ok(previewDocument.querySelector('.preview-markup table'));
+  assert.equal(previewDocument.querySelector('.preview-conditions')?.closest('.preview-markup'), null);
+  assert.match(previewDocument.querySelector('style')?.textContent || '', /\.preview-markup\{display:flow-root/);
+  assert.match(previewDocument.querySelector('style')?.textContent || '', /figure\.table\{[^}]*height:auto!important/);
+  assert.match(previewDocument.querySelector('style')?.textContent || '', /table\{[^}]*float:none!important/);
+  assert.match(previewDocument.querySelector('style')?.textContent || '', /\.preview-conditions\{clear:both/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /table\{[^}]*table-layout:fixed/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /th,td\{[^}]*border:1px solid/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /th,td\{[^}]*width:auto!important/);
@@ -156,6 +169,13 @@ test('Content-details back links return through their actual parent objects', as
   assert.match(condition?.nextElementSibling?.textContent || '', /use child/);
   assert.match(document.querySelector('#content-detail')?.textContent || '', /parent field/);
   assert.doesNotMatch(document.querySelector('#content-detail')?.textContent || '', /child field/);
+
+  const conditionalPreview = document.querySelector('#content-detail li [data-canonical="preview"][data-value="child%20content"]');
+  assert.equal(conditionalPreview?.getAttribute('aria-label'), 'Preview HTML for child content');
+  click(document, '#content-detail li [data-canonical="preview"][data-value="child%20content"]');
+  assert.equal(document.querySelector('#content-preview-title')?.textContent, 'child content');
+  assert.match(document.querySelector('#content-preview-frame')?.srcdoc || '', /child field/);
+  assert.equal(document.querySelector('#content-detail h2')?.textContent, 'parent content');
 
   click(document, '[data-canonical="content"][data-value="child%20content"]');
   assert.ok(document.querySelector('#content-detail [data-canonical="preview"]'));
@@ -178,7 +198,7 @@ test('Content-details back links return through their actual parent objects', as
   assert.doesNotMatch(document.querySelector('#content-panel').textContent, /Top-level field definition/);
 
   writeJson(path.join(cache, 'packages', 'test-package', 'versions', '1.0', 'AssemblyTemplate.json'), {
-    Fields: [{ Name: 'parent field', Path: '$.parent' }],
+    Fields: [{ Name: 'parent field', Path: '$.parent' }, { Name: 'DC14', Path: '$.billDate' }],
     Documents: [{ $$Id: 'test document', Condition: '$[?(@.amount < 100 && @.kind == \"bill\")]', Layouts: [
       { $$Id: 'parent layout', Contents: [
         { $$Id: 'parent content', Iteration: { $$Id: 'rows', Path: '$.rows', Fields: [{ Name: 'inherited field', Path: '$.inherited' }] } },
