@@ -1,5 +1,14 @@
 # Notes
 
+## 1.2.4 - 2026-10-13
+
+- Preserve neighboring cached artifacts when downloading a single package,
+  document, layout, content, font, style or chart. Stage downloads before
+  replacing the requested artifact, and preserve the old copy on failure.
+- Fix mockup field tokens and content preview table layout.
+- Build and publish release artifacts on version tag pushes; commits to main
+  no longer trigger builds.
+
 ## 1.2.3 - 2026-10-08
 
 - Shorten conditional placeholders in Content HTML previews to `Cond`, with tooltips that show the condition or referenced content when available.
