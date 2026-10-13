@@ -780,3 +780,15 @@ Each command lives in `lib/` and can be extended independently:
 *	lib/graph.js (GraphViz rendering)
 *	lib/crossRef.js (xref report logic)
 *	etc.
+
+
+### Building and publishing releases
+
+Push a version tag (`v*`) to run the release workflow, test the CLI, build the
+distribution ZIP, and publish it to GitHub Releases. Commits to `main` do not
+trigger builds. To rebuild an existing tag, select **Actions → Publish release
+artifact → Run workflow** and enter that tag.
+
+ATool native builds bundle the latest published stable OCCS CLI release. Publish
+the CLI release before tagging ATool when its native applications should include
+new CLI fixes.
