@@ -1,5 +1,12 @@
 # Notes
 
+## 1.2.5 - 2026-10-19
+
+- Support email recipient overrides for non-ebill notification JSON at
+  `sendDetail.deliveryInfo.contactValue`. Preserve notification fields and
+  require one address because this format has a single contact field.
+- Clarify Windows installation instructions for Poppler and ImageMagick.
+
 ## 1.2.4 - 2026-10-13
 
 - Preserve neighboring cached artifacts when downloading a single package,
