@@ -449,7 +449,7 @@ Optional parameters:
 * `--customer <customer>`, `--region <region>`/`--environment <environment>`, `--tenancy <tenancy>`: Select a saved session by target. Omitted target parts default from the current session.
 * `-e, --effective-date <date>`: Effective date in `YYYY-MM-DD` format. Defaults to today.
 * `-r, --render-type <type...>`: One or more render types (`PDF`, `HTML`, `TEXT`, `CSV`, `JSON`, `METADATA`, `EMAIL`). Supports comma-separated (`-r PDF,HTML`) or space-separated (`-r PDF HTML`) values. Defaults to `PDF`.
-* `--email-config-uuid <uuid>`: Required for `EMAIL` unless `OCCS_EMAIL_CONFIG_UUID` is set. This is the `CommunicationConfigUuid` used by the email communication API.
+* `--email-config-uuid <uuid>`: Required for `EMAIL` unless `OCCS_EMAIL_CONFIG_UUID` is set. This identifies a `CommunicationEmailConfigUuid`. Before sending, the CLI follows active Communication/detail/process/service relationships to resolve the API’s `CommunicationConfigUuid` and transaction type. Missing or ambiguous routes fail without submitting email.
 * `--recipient <email>`: Override `billPrint.billDetails.cmElements.eBill.recipientEmails`; repeat the option or use comma-separated values. For notification JSON, overrides `sendDetail.deliveryInfo.contactValue` and requires exactly one address. The CLI creates the `eBill.recipientEmails` structure when absent. If omitted, `OCCS_EMAIL_RECIPIENTS` is used when set; otherwise, recipients from the input JSON are preserved.
 * `--send-email`: Submit the real email. Without it, `EMAIL` validates the request and reports the recipients and configuration it would use, without posting to Comms.
 * `--timeout <ms>`: Request timeout override for preview/XML-converter calls. Default is `360000` (360 seconds).
@@ -854,3 +854,77 @@ artifact → Run workflow** and enter that tag.
 ATool native builds bundle the latest published stable OCCS CLI release. Publish
 the CLI release before tagging ATool when its native applications should include
 new CLI fixes.
+
+### Communication Email lookup
+
+`occs list-emails` lists Communication Email elements by their Comms short name,
+name, and parent `CommunicationEmailConfigUuid`. This UUID identifies the email element, not the send API's `CommunicationInfo.CommunicationConfigUuid`. The CLI resolves the latter through Communication routing relationships; version UUIDs and authoring ConfigurationIds are also different identifiers. Enumeration does not send
+email or validate which element is suitable for a particular mapped payload.
+
+* `occs list-emails --session non-prod --json`: JSON on stdout, with no banner or progress text.
+* `occs list-emails --output ./comms-cache/emails`: print names/UUIDs and cache the list.
+* `occs list-emails --session non-prod --json --output ./comms-cache/emails`: return JSON and refresh the cache.
+
+The command supports the usual saved-session selectors and `--timeout <ms>`.
+`get-everything --output ./comms-cache` also refreshes `emails/index.json` on each
+run, including resumed exports. The index contains `{ok, count, emails, session,
+fetchedAt, records}`. Each normalized email has `{uuid, shortName, name, configId,
+statuses}`; `records` preserves the raw list records. Session metadata includes
+only the alias, resolved session key and base URL, with no credentials or tokens.
+Pagination must finish successfully before the previous index is replaced;
+a failed enumeration returns a nonzero exit status (`{ok:false,error}` in JSON mode).
+
+Email submission resolves the selected Communication Email to its active parent
+Communication and configured transaction type before posting. For example, an
+email element named `RealTime_Email` may have UUID `EMAIL-ID`, while its parent
+Communication has UUID `COMMUNICATION-ID` and user-defined transaction type
+`RealTime_Email`. The send body uses the parent UUID and that transaction type,
+not `EMAIL-ID` and a hard-coded `Email` transaction. The CLI refuses to guess
+when no active route or multiple distinct active routes reference an email.
+`--verbose` prints both identifiers and the resolved transaction. Local EMAIL
+dry runs still do not perform this lookup or validate server-side routing.
+
+### Sanitized HTTP diagnostics
+
+Set `OCCS_HTTP_DEBUG=1` to emit correlated HTTP request/response diagnostics to
+stderr for the shared API transport and assembly/email preview requests. ATool
+sets this automatically when Debug Logging is enabled and displays the dumps in
+Activity. `--json` stdout remains unchanged.
+
+Records include an ID, HTTP method, URL, headers, body, response status and elapsed
+milliseconds. Authorization, cookies, secrets, common personal fields and signed
+URL values are masked. Mapped-data scalar values are masked while retaining JSON
+structure and string encoding; routing UUIDs, transaction types, execution IDs,
+and error codes remain visible. Rendered/binary content and large bodies are
+summarized. The diagnostic switch does not change or resend the actual request.
+
+For email sends, routing discovery is reported as one short summary; its GET
+configuration bodies are not dumped. Debug output retains the actual send POST
+request/response pair. A 2xx response is accepted only if the returned business
+result has no error or manual-review requirement. Rejections such as an invalid
+address return a nonzero exit code with the Comms reason and execution ID, and are
+not automatically resubmitted. Acceptance does not confirm inbox delivery.
+
+Address diagnostics show a partially masked local part and the full domain (for
+example `cu***@example.com`), including inside JSON-encoded input data and error
+text. Empty or malformed address fields are explicit. Template names, delivery
+types, languages and template parameter keys remain readable; other mapped scalar
+values show type/length. Credential values remain fully redacted. Applying the
+Activity sanitizer again preserves these diagnostic hints.
+
+
+### Email distribution routes
+
+`list-email-routes --session np --json` enumerates active Communication transactions
+with Email Creation or Email Distribution services. Runtime-routed templates do not
+need a direct Communication Email UUID relationship. `--output <cache>/email-routes`
+saves an environment-labelled `index.json`; `get-everything` also writes this cache.
+`list-emails` continues to enumerate Email elements, which have different UUIDs.
+
+Pass the selected route directly to `preview --render-type EMAIL --send-email` with
+`--communication-config-uuid <parent-uuid> --communication-transaction-type 'User Defined'
+--communication-user-defined-transaction-type <transaction>`, plus input and recipient.
+These values bypass discovery, and are copied into CommunicationInfo along with
+JSON-encoded CommunicationData. For User Defined, all three values are required.
+Do not combine explicit routing with `--email-config-uuid`; the latter retains its
+existing relationship-discovery behavior. ATool uses the explicit route options.

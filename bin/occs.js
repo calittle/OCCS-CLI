@@ -18,6 +18,8 @@ import { graphCommand } from '../lib/graph.js';
 import { mockupCommand } from '../lib/mockup.js';
 import { listCompaniesCommand } from '../lib/companies.js';
 import { listConfigsCommand } from '../lib/configs.js';
+import { listEmailsCommand } from '../lib/emails.js';
+import { listEmailRoutesCommand } from '../lib/emailRouteCatalog.js';
 import { preflightCommand } from '../lib/preflight.js';
 import { closeConfigCommand, createConfigCommand, migrateCommand } from '../lib/migration.js';
 import { convertXmlCommand, previewCommand } from '../lib/preview.js';
@@ -193,6 +195,34 @@ program
   .action(listCompaniesCommand);
 
 program
+  .command('list-emails')
+  .description('List Communication Email names and parent configuration UUIDs')
+  .option('-o, --output <dir>', 'Save the email list cache as <dir>/index.json')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Verbose logging')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .action(listEmailsCommand);
+
+program
+  .command('list-email-routes')
+  .description('List Communication distribution routes with email services and their transactions')
+  .option('-o, --output <dir>', 'Save the email route cache as <dir>/index.json')
+  .option('--session <name>', 'Saved session alias or key to use')
+  .option('--customer <customer>', 'Customer short name for saved-session lookup')
+  .option('--region <region>', 'Oracle region for saved-session lookup')
+  .option('--environment <environment>', 'Oracle environment (alias for region)')
+  .option('--tenancy <tenancy>', 'Tenancy path for saved-session lookup')
+  .option('--timeout <ms>', `Request timeout in milliseconds (default ${DEFAULT_REQUEST_TIMEOUT_MS})`)
+  .option('-v, --verbose', 'Verbose logging')
+  .option('--json', 'Write machine-readable JSON to stdout')
+  .action(listEmailRoutesCommand);
+
+program
   .command('list-configs')
   .description('Generate list of open configuration IDs')
   .option('-o, --output <dir>', 'Path to output folder')
@@ -292,7 +322,10 @@ program
   .option('-e, --effective-date <date>', 'Effective date (YYYY-MM-DD), defaults to today')
   .option('-d, --debug [nameAndValue...]', 'Inject debug key/value into JSON input. Defaults: name=DEBUGCOMMS value=1')
   .option('-r, --render-type <type...>', 'Render type(s): PDF, HTML, TEXT, CSV, JSON, METADATA, EMAIL (supports comma or space separated values)', ['PDF'])
-  .option('--email-config-uuid <uuid>', 'Email communication configuration UUID (or OCCS_EMAIL_CONFIG_UUID)')
+  .option('--email-config-uuid <uuid>', 'Communication Email UUID; resolves its Communication route before sending (or OCCS_EMAIL_CONFIG_UUID)')
+  .option('--communication-config-uuid <uuid>', 'Parent Communication UUID; bypass Email relationship discovery')
+  .option('--communication-transaction-type <type>', 'Transaction type for the selected Communication route')
+  .option('--communication-user-defined-transaction-type <type>', 'User-defined transaction within the selected Communication')
   .option('--recipient <email>', 'Override email recipient; repeat or comma-separate values', (value, previous = []) => [...previous, value], [])
   .option('--send-email', 'Submit EMAIL to Comms; otherwise report the email that would be sent')
   .option('-o, --output <path>', 'Output file path (or directory)')
@@ -441,6 +474,8 @@ program
       await listFontsCommand(commandFor('fonts')),
       await listStylesCommand(commandFor('styles')),
       await listChartsCommand(commandFor('charts')),
+      await listEmailsCommand(commandFor('emails')),
+      await listEmailRoutesCommand(commandFor('email-routes')),
     ];
     if (results.some((result) => result?.ok === false)) {
       console.error("⚠ Export completed with failures. Re-run `occs get-everything --output <dir>` to retry incomplete or missing artifacts.");

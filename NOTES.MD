@@ -1,5 +1,19 @@
 # Notes
 
+## 1.2.6 - 2026-10-21
+
+- Add `list-emails` and `list-email-routes`, with JSON output and environment-labelled
+  caches. Include both lists in `get-everything`. Distribution routes include email
+  services that choose templates through runtime rules without a direct Email link.
+- Allow email requests to specify the parent Communication UUID and transaction
+  directly, avoiding a configuration scan for every send. Retain Email UUID
+  relationship discovery for existing callers and reject missing or ambiguous routes.
+- Report business errors and manual-review requirements as failures even when Comms
+  returns HTTP 2xx. Report successful requests as accepted, without claiming delivery.
+- Add optional sanitized request/response diagnostics with execution context,
+  partially masked addresses, readable routing fields, and bounded output. Omit
+  large discovery responses and keep machine-readable JSON output separate.
+
 ## 1.2.5 - 2026-10-19
 
 - Support email recipient overrides for non-ebill notification JSON at
