@@ -659,7 +659,7 @@ Generate a standalone interactive document inspector from a cache refreshed with
 
 `occs mockup EXAMPLE-DOC-1 --cache ./comms_cache --package example_bills --output ./output/EXAMPLE-DOC-1-inspector.html`
 
-Use `--package` when the document belongs to a package so the inspector can include the Assembly Template's document condition.
+Use `--package` when the document belongs to a package so the inspector can include the Assembly Template's document condition. The (!) icons also flag Assembly Template content references that are absent from the selected document version or blocked by an inactive layout. Select an icon to see the affected paths and any alternative placements. These configuration warnings propagate to parent layouts and the document, and remain visible on inactive branches. Unreferenced inactive content alone does not produce a warning.
 
 Generate every cached document referenced by the latest package Assembly Template:
 

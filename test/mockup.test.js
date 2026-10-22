@@ -212,10 +212,10 @@ test('Content-details back links return through their actual parent objects', as
   const resolvedDom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
   t.after(() => { dom.window.close(); resolvedDom.window.close(); });
   const resolved = resolvedDom.window.document;
-  assert.ok(resolved.querySelector('[data-node="layout-0"] > .warning-icon'));
-  assert.equal(resolved.querySelector('[data-node="document"] > .warning-icon'), null);
+  assert.ok(resolved.querySelector('[data-node="layout-0"] > .warning-icon:not(.configuration-warning)'));
+  assert.equal(resolved.querySelector('[data-node="document"] > .warning-icon:not(.configuration-warning)'), null);
   click(resolved, '[data-node="document"]');
-  assert.equal(resolved.querySelector('#detail .warning-icon'), null);
+  assert.equal(resolved.querySelector('#detail .warning-icon:not(.configuration-warning)'), null);
   assert.equal(resolved.querySelector('#content-detail .package-version').textContent, 'Ver: 1.0');
   assert.equal(resolved.querySelector('#content-detail .chip:not(button)'), null);
   const packageDialog = resolved.querySelector('#package-dialog');
@@ -234,14 +234,14 @@ test('Content-details back links return through their actual parent objects', as
   assert.doesNotMatch(resolved.querySelector('#content-detail').textContent, /Document condition|Open full condition|This Assembly Template expression/);
 
   click(resolved, '[data-canonical="layouts"]');
-  assert.ok(resolved.querySelector('[data-canonical="layout"][data-value="layout-0"] + .warning-icon'));
+  assert.ok(resolved.querySelector('[data-canonical="layout"][data-value="layout-0"] + .warning-icon:not(.configuration-warning)'));
   click(resolved, '[data-node="layout-0"]');
-  assert.ok(resolved.querySelector('[data-canonical="contents"] + .warning-icon'));
-  assert.equal(resolved.querySelector('[data-canonical="layouts"] + .warning-icon'), null);
+  assert.ok(resolved.querySelector('[data-canonical="contents"] + .warning-icon:not(.configuration-warning)'));
+  assert.equal(resolved.querySelector('[data-canonical="layouts"] + .warning-icon:not(.configuration-warning)'), null);
   click(resolved, '[data-canonical="contents"]');
-  assert.ok(resolved.querySelector('[data-canonical="content"][data-value="parent%20content"] + .warning-icon'));
+  assert.ok(resolved.querySelector('[data-canonical="content"][data-value="parent%20content"] + .warning-icon:not(.configuration-warning)'));
   click(resolved, '[data-canonical="content"][data-value="parent%20content"]');
-  assert.ok(resolved.querySelector('[data-canonical="content"][data-value="child%20content"] + .warning-icon'));
+  assert.ok(resolved.querySelector('[data-canonical="content"][data-value="child%20content"] + .warning-icon:not(.configuration-warning)'));
   assert.equal(resolved.querySelector('#content-detail .field-warning'), null);
   click(resolved, '[data-canonical="field"]');
   assert.match(resolved.querySelector('#content-panel').textContent, /Top-level field definition/);
@@ -280,13 +280,13 @@ test('Content-details back links return through their actual parent objects', as
   const healthyDom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
   t.after(() => healthyDom.window.close());
   const healthy = healthyDom.window.document;
-  assert.equal(healthy.querySelector('.warning-icon'), null);
+  assert.equal(healthy.querySelector('.warning-icon:not(.configuration-warning)'), null);
   click(healthy, '[data-node="layout-0"]');
   click(healthy, '[data-canonical="contents"]');
   click(healthy, '[data-canonical="content"][data-value="parent%20content"]');
-  assert.equal(healthy.querySelector('.warning-icon'), null);
+  assert.equal(healthy.querySelector('.warning-icon:not(.configuration-warning)'), null);
   click(healthy, '[data-canonical="content"][data-value="child%20content"]');
-  assert.equal(healthy.querySelector('.warning-icon, .field-warning'), null);
+  assert.equal(healthy.querySelector('.warning-icon:not(.configuration-warning), .field-warning'), null);
   assert.equal(healthy.querySelectorAll('#content-detail .system-field').length, 3);
   for (const name of ['PackagePageNum', 'PackagePageCount', 'GRIDPAGENUMBER']) {
     const field = healthy.querySelector('[data-canonical="field"][data-value="'+name+'"]');
@@ -320,16 +320,123 @@ test('Content-details back links return through their actual parent objects', as
     const inactiveDom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
     t.after(() => inactiveDom.window.close());
     const inactive = inactiveDom.window.document;
-    assert.equal(inactive.querySelector('.warning-icon'), null, disabled);
+    assert.equal(inactive.querySelector('.warning-icon:not(.configuration-warning)'), null, disabled);
     click(inactive, '[data-node="layout-0"]');
     click(inactive, '[data-canonical="contents"]');
-    assert.equal(inactive.querySelector('.warning-icon'), null, disabled);
+    assert.equal(inactive.querySelector('.warning-icon:not(.configuration-warning)'), null, disabled);
     click(inactive, '[data-canonical="content"][data-value="parent%20content"]');
-    assert.equal(inactive.querySelector('.warning-icon, .field-warning'), null, disabled);
+    assert.equal(inactive.querySelector('.warning-icon:not(.configuration-warning), .field-warning'), null, disabled);
     click(inactive, '[data-canonical="field"]');
     assert.match(inactive.querySelector('#content-panel').textContent, /never triggered/);
     click(inactive, '[data-canonical="content"][data-value="child%20content"]');
-    assert.equal(inactive.querySelector('.warning-icon, .field-warning'), null, disabled);
+    assert.equal(inactive.querySelector('.warning-icon:not(.configuration-warning), .field-warning'), null, disabled);
   }
 
+});
+
+test('AT configuration warnings expose blocked references and alternate placements in the selected version', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'occs-config-warning-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const cache = path.join(root, 'cache'), output = path.join(root, 'inspector.html');
+  const contentRel = (name, always = false) => ({
+    ShortName: name,
+    CommunicationLayoutConfigCommunicationContentConfigRelRec: {
+      CommunicationLayoutConfigCommunicationContentConfigRelInfo: { ContentAlwaysTriggerInd: always },
+    },
+  });
+  const childRel = (uuid, always = true) => ({
+    CommunicationLayoutConfigCommunicationLayoutConfigRelRec: {
+      CommunicationLayoutConfigCommunicationLayoutConfigRelInfo: { RelCommunicationLayoutConfigUuid: uuid, LayoutAlwaysTriggerInd: always },
+    },
+  });
+  const layout = (uuid, name, contents = [], children = []) => writeJson(path.join(cache, 'layouts', uuid, 'layout.json'), {
+    CommunicationLayoutConfigRec: { CommunicationLayoutConfigUuid: uuid, CommunicationLayoutConfigInfo: { ShortName: name, LayoutType: 'Block' } },
+    CommunicationLayoutContents: contents, CommunicationLayoutLayouts: children,
+  });
+  const document = uuid => ({
+    CommunicationDocumentConfigRec: { CommunicationDocumentConfigInfo: { ShortName: 'Manual Backcharge' } },
+    CommunicationDocumentVersionLayouts: [{
+      CommunicationDocumentVersionConfigCommunicationLayoutConfigRelRec: {
+        CommunicationDocumentVersionConfigCommunicationLayoutConfigRelInfo: { CommunicationLayoutConfigUuid: uuid, LayoutAlwaysTriggerInd: true },
+      },
+    }],
+  });
+  layout('body', 'body', [], [childRel('sidebar'), childRel('disabled', false), childRel('conditioned', false)]);
+  layout('sidebar', 'sidebar messages area', [contentRel('next bill notice'), contentRel('unused')]);
+  layout('disabled', 'sidebar messages no mtrs', [], [childRel('late')]);
+  layout('late', 'late_payment', [contentRel('next bill notice')]);
+  layout('conditioned', 'conditioned layout', [contentRel('conditioned content')]);
+  layout('old', 'old layout', [contentRel('old content')]);
+  writeJson(path.join(cache, 'documents', 'Manual Backcharge', 'versions', '1.0.json'), document('old'));
+  writeJson(path.join(cache, 'documents', 'Manual Backcharge', 'versions', '3.0.json'), document('body'));
+  const assemblyFile = path.join(cache, 'packages', 'CLP_bills', 'versions', '1.0', 'AssemblyTemplate.json');
+  const assembly = { Documents: [{ $$Id: 'Manual Backcharge', Layouts: [
+    { $$Id: 'late_payment', Contents: [{ $$Id: 'next bill notice' }] },
+    { $$Id: 'old layout', Contents: [{ $$Id: 'old content' }] },
+    { $$Id: 'conditioned layout', Condition: 'some condition', Contents: [{ $$Id: 'conditioned content' }] },
+  ] }] };
+  writeJson(assemblyFile, assembly);
+  const generate = async () => {
+    await mockupCommand('Manual Backcharge', { cache, output, package: 'CLP_bills' });
+    const html = fs.readFileSync(output, 'utf8');
+    const model = JSON.parse(html.match(/const m=(.*?),inspector=document\.querySelector/s)[1]);
+    const dom = new JSDOM(html, { runScripts: 'dangerously' });
+    t.after(() => dom.window.close());
+    return { model, document: dom.window.document };
+  };
+  const result = await generate();
+  assert.equal(result.model.document.version, '3.0');
+  assert.equal(result.model.configurationWarnings.length, 2);
+  const issue = result.model.configurationWarnings.find(issue => issue.content === 'next bill notice');
+  assert.deepEqual(issue.blockedBy, ['sidebar messages no mtrs']);
+  assert.deepEqual(issue.alternativePaths, ['body → sidebar messages area → next bill notice']);
+  assert.match(issue.targetPaths[0], /sidebar messages no mtrs → late_payment → next bill notice/);
+  assert.match(result.model.configurationWarnings.find(issue => issue.content === 'old content').message, /absent from this document version/);
+  const doc = result.document;
+  assert.ok(doc.querySelector('[data-node="document"] > .configuration-warning'));
+  click(doc, '[data-node="document"] > .configuration-warning');
+  assert.match(doc.querySelector('#content-panel').textContent, /old content/);
+  const sidebar = [...doc.querySelectorAll('.region')].find(el => el.querySelector('b')?.textContent === 'sidebar messages area');
+  click(doc, '[data-node="'+sidebar.dataset.node+'"]');
+  assert.ok(doc.querySelector('#detail [data-canonical="contents"] + .configuration-warning'));
+  click(doc, '#detail [data-canonical="contents"]');
+  assert.ok(doc.querySelector('[data-canonical="content"][data-value="next%20bill%20notice"] + .configuration-warning'));
+  assert.equal(doc.querySelector('[data-canonical="content"][data-value="unused"] + .configuration-warning'), null);
+  click(doc, '#content-detail .configuration-warning');
+  assert.match(doc.querySelector('#content-panel').textContent, /blocked by an inactive layout/);
+  assert.match(doc.querySelector('#content-panel').textContent, /AT reference: late_payment → next bill notice/);
+  assert.match(doc.querySelector('#content-panel').textContent, /Alternative placement: body → sidebar messages area/);
+  // Configuration warnings survive suppression inside the blocked branch.
+  const late = [...doc.querySelectorAll('.region')].find(el => el.querySelector('b')?.textContent === 'late_payment');
+  click(doc, '[data-node="'+late.dataset.node+'"]');
+  click(doc, '#detail [data-canonical="contents"]');
+  assert.ok(doc.querySelector('#content-detail .configuration-warning'));
+
+  // Correcting only the AT removes the mismatch. Unreferenced disabled content
+  // remains ordinary inactive content rather than generating false warnings.
+  assembly.Documents[0].Layouts = [
+    { $$Id: 'sidebar messages area', Contents: [{ $$Id: 'next bill notice' }] },
+    assembly.Documents[0].Layouts[2],
+  ];
+  writeJson(assemblyFile, assembly);
+  const fixed = await generate();
+  assert.deepEqual(fixed.model.configurationWarnings, []);
+  assert.equal(fixed.document.querySelector('.configuration-warning'), null);
+
+  // A second active occurrence of the same target layout makes the reference
+  // usable even when another occurrence is underneath an inactive ancestor.
+  assembly.Documents[0].Layouts[0].$$Id = 'late_payment';
+  writeJson(assemblyFile, assembly);
+  layout('body', 'body', [], [childRel('sidebar'), childRel('disabled', false), childRel('late'), childRel('conditioned', false)]);
+  assert.deepEqual((await generate()).model.configurationWarnings, []);
+
+  // A missing content pair still flags its existing target layout, even if
+  // there is no alternative placement to annotate.
+  assembly.Documents[0].Layouts[0] = { $$Id: 'sidebar messages area', Contents: [{ $$Id: 'missing content' }] };
+  writeJson(assemblyFile, assembly);
+  const missing = await generate();
+  assert.equal(missing.model.configurationWarnings.length, 1);
+  assert.match(missing.model.configurationWarnings[0].message, /absent from this document version/);
+  const missingSidebar = [...missing.document.querySelectorAll('.region')].find(el => el.querySelector('b')?.textContent === 'sidebar messages area');
+  assert.ok(missingSidebar.querySelector(':scope > .configuration-warning'));
 });
