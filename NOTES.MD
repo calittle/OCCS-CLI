@@ -1,5 +1,15 @@
 # Notes
 
+## 1.2.7 - 2026-10-22
+
+- Flag Assembly Template layout/content references that are missing from the
+  selected document version or blocked by inactive layouts. Select a warning
+  to inspect affected paths and alternative content placements; warnings also
+  appear on parent layouts and the document, including inactive branches.
+- Correct conditional layout lookup in document models to match Assembly
+  Template layout names, so layouts with configured conditions are identified
+  as conditional rather than incorrectly shown as inactive.
+
 ## 1.2.6 - 2026-10-21
 
 - Add `list-emails` and `list-email-routes`, with JSON output and environment-labelled
