@@ -1,5 +1,13 @@
 # Notes
 
+## 1.2.8 - 2026-11-03
+
+- Show all retained layouts sharing a grid area in document mockups instead
+  of hiding alternate conditional layouts. Select an option to expand its
+  metadata and children in place, without duplicating the selected block.
+- Reveal the matching layout and enclosing variants when selecting a layout
+  from the Inspector, including nested alternatives.
+
 ## 1.2.7 - 2026-10-22
 
 - Flag Assembly Template layout/content references that are missing from the
