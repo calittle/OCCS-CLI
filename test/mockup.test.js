@@ -440,3 +440,83 @@ test('AT configuration warnings expose blocked references and alternate placemen
   const missingSidebar = [...missing.document.querySelectorAll('.region')].find(el => el.querySelector('b')?.textContent === 'sidebar messages area');
   assert.ok(missingSidebar.querySelector(':scope > .configuration-warning'));
 });
+
+test('Shared grid areas expose every retained layout and reveal nested Inspector selections', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'occs-variants-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const cache = path.join(root, 'cache'), output = path.join(root, 'inspector.html');
+  const relation = (uuid, area, always = false) => ({
+    CommunicationLayoutConfigCommunicationLayoutConfigRelRec: {
+      CommunicationLayoutConfigCommunicationLayoutConfigRelInfo: {
+        RelCommunicationLayoutConfigUuid: uuid, StyleAreaName: area, LayoutAlwaysTriggerInd: always,
+      },
+    },
+  });
+  const layout = (uuid, type, children = [], areas = '') => writeJson(path.join(cache, 'layouts', uuid, 'layout.json'), {
+    CommunicationLayoutConfigRec: { CommunicationLayoutConfigUuid: uuid, CommunicationLayoutConfigInfo: { ShortName: uuid, LayoutType: type } },
+    CommunicationLayoutLayouts: children,
+    CommunicationLayoutStyles: areas ? [{ CommunicationStyleConfigRec: { CommunicationStyleConfigInfo: {
+      CommunicationStyleConfigStyleAttribute: { Items: [
+        { StyleAttributeName: 'Grid-template-areas', StyleAttributeValue: areas },
+        { StyleAttributeName: 'Grid-template-columns', StyleAttributeValue: '2fr 1fr' },
+      ] },
+    } } }] : [],
+  });
+  layout('body', 'Grid', [relation('details', 'main'), relation('details AMND', 'main'), relation('sidebar', 'side', true), relation('disabled', 'main')], "'main side'");
+  layout('details', 'Block');
+  layout('details AMND', 'Grid', [relation('nested A', 'main'), relation('nested B', 'main')], "'main main'");
+  layout('nested A', 'Block');
+  layout('nested B', 'Block');
+  layout('sidebar', 'Block');
+  layout('disabled', 'Block');
+  writeJson(path.join(cache, 'documents', 'BULK_BILL', 'versions', '2.0.json'), {
+    CommunicationDocumentConfigRec: { CommunicationDocumentConfigInfo: { ShortName: 'BULK_BILL' } },
+    CommunicationDocumentVersionLayouts: [{ CommunicationDocumentVersionConfigCommunicationLayoutConfigRelRec: {
+      CommunicationDocumentVersionConfigCommunicationLayoutConfigRelInfo: { CommunicationLayoutConfigUuid: 'body', LayoutAlwaysTriggerInd: true },
+    } }],
+  });
+  writeJson(path.join(cache, 'packages', 'bills', 'versions', '1.0', 'AssemblyTemplate.json'), {
+    Documents: [{ $$Id: 'BULK_BILL', Layouts: ['details', 'details AMND', 'nested A', 'nested B'].map(name => ({ $$Id: name, Condition: name + ' condition' })) }],
+  });
+  await mockupCommand('BULK_BILL', { cache, output, package: 'bills' });
+  const dom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
+  t.after(() => dom.window.close());
+  const doc = dom.window.document;
+  const group = doc.querySelector('.layout-variants');
+  assert.ok(group, 'Layouts sharing a grid area should have one shared region.');
+  assert.equal(group.style.gridArea, 'main');
+  const choices = group.querySelectorAll(':scope > .variant-options > .variant-layout > button');
+  assert.deepEqual([...choices].map(button => button.textContent), ['details', 'details AMND']);
+  assert.equal(choices[0].getAttribute('aria-expanded'), 'true');
+  assert.equal(group.querySelectorAll(':scope > .region').length, 0, 'Each option expands in place without a separate selected block.');
+  assert.equal(choices[0].parentElement.querySelector(':scope > b'), null, 'The selected name is shown only once.');
+  assert.match(choices[0].parentElement.querySelector(':scope > small').textContent, /Block · 0 contents/);
+  const first = doc.querySelector('[data-node="' + choices[0].dataset.value + '"]');
+  const second = doc.querySelector('[data-node="' + choices[1].dataset.value + '"]');
+  assert.equal(first.classList.contains('variant-collapsed'), false);
+  assert.equal(second.classList.contains('variant-collapsed'), true);
+  click(doc, '[data-canonical="variant"][data-value="' + choices[1].dataset.value + '"]');
+  assert.equal(first.classList.contains('variant-collapsed'), true);
+  assert.equal(second.classList.contains('variant-collapsed'), false);
+  assert.equal(choices[1].getAttribute('aria-expanded'), 'true');
+  assert.equal(doc.querySelector('#detail h2').textContent, 'details AMND');
+  click(doc, '#detail .condition-chip');
+  assert.equal(doc.querySelector('#detail .condition-detail').textContent, 'details AMND condition');
+  // Opening a descendant from the Inspector reveals all enclosing variants.
+  const nested = second.querySelectorAll(':scope > .layout-variants > .variant-options > .variant-layout > button')[1].dataset.value;
+  click(doc, '[data-node="' + choices[0].dataset.value + '"]');
+  const link = doc.createElement('button');
+  link.dataset.canonical = 'layout';
+  link.dataset.value = nested;
+  doc.querySelector('#content-detail').append(link);
+  click(doc, '#content-detail [data-canonical="layout"]');
+  assert.equal(second.classList.contains('variant-collapsed'), false);
+  assert.equal(doc.querySelector('[data-node="' + nested + '"]').classList.contains('variant-collapsed'), false);
+  assert.equal(doc.querySelector('#detail h2').textContent, 'nested B');
+  assert.equal(choices[1].getAttribute('aria-expanded'), 'true');
+  click(doc, '[data-node="layout-0"]');
+  click(doc, '#detail [data-canonical="layouts"]');
+  assert.match(doc.querySelector('#content-detail').textContent, /disabled/);
+  assert.equal(doc.querySelector('[data-node="layout-0-3"]').style.display, 'none');
+  assert.equal(doc.querySelector('[data-node="layout-0-2"]').closest('.layout-variants'), null, 'Ordinary siblings keep their source placement.');
+});
