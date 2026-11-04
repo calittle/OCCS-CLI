@@ -26,6 +26,7 @@ import { convertXmlCommand, previewCommand } from '../lib/preview.js';
 import { conditionCheckCommand } from '../lib/conditionCheck.js';
 import { smokeCommand } from '../lib/smoke.js';
 import { templateCompareCommand } from '../lib/templateCompare.js';
+import { compareCommand } from '../lib/resourceCompareSources.js';
 import { consumeRuntimeCompletionContext, startRuntimeCounter, stopRuntimeCounter } from '../lib/runtimeCounter.js';
 import { sessionsCommand, useSessionCommand } from '../lib/sessionCommands.js';
 import { setJsonPretty } from '../lib/utils.js';
@@ -157,7 +158,7 @@ program.hook('preAction', (_thisCommand, actionCommand) => {
   const opts = actionCommand?.optsWithGlobals?.() || {};
   setJsonPretty(opts.pretty || process.argv.includes('--pretty'));
   setDefaultRequestTimeoutMs(opts.timeout);
-  if (opts.json) {
+  if (opts.json || actionCommand?.name?.() === 'compare') {
     return;
   }
   const commandName = actionCommand?.name?.() || 'command';
@@ -169,7 +170,7 @@ program.hook('postAction', (_thisCommand, actionCommand) => {
   const commandName = actionCommand?.name?.() || 'command';
   const context = consumeRuntimeCompletionContext();
   const opts = actionCommand.optsWithGlobals();
-  if (opts?.json) {
+  if (opts?.json || actionCommand?.name?.() === 'compare') {
     return;
   }
   if (elapsedSeconds) {
@@ -398,6 +399,23 @@ program
   .option('--show-near-misses', 'Show general near misses even when --expect-doc is provided')
   .option('--near-miss-threshold <value>', 'Near-miss minimum pass ratio (default 65%; accepts 0-1 or percent like 0.6 or 60)')
   .action(conditionCheckCommand);
+
+program
+  .command('compare <type> <name>')
+  .description('Compare resource versions or two saved resource snapshots; output a standardized Markdown or JSON report')
+  .option('--from-version <version>', 'Version short name before the change')
+  .option('--to-version <version>', 'Version short name after the change')
+  .option('--cache <dir>', 'Read both versions from one exported resource cache')
+  .option('--from-cache <dir>', 'Read the before resource from this exported cache')
+  .option('--to-cache <dir>', 'Read the after resource from this exported cache')
+  .option('--include-technical', 'Append exact JSON paths, identifiers and source values to the Markdown report')
+  .option('--list-versions', 'List versions without comparing (includes inactive versions)')
+  .option('--format <format>', 'Report format: md or json', 'md')
+  .option('-o, --output <file>', 'Save the report to this file')
+  .option('--session <name>', 'Saved session alias or key for live comparison')
+  .option('--json', 'Write JSON results including the Markdown report')
+  .option('-v, --verbose', 'Verbose logging (Markdown output only)')
+  .action(compareCommand);
 
 program
   .command('template-compare')
@@ -797,11 +815,11 @@ contentCommand
   .option('-v, --verbose', 'Include request detail')
   .action(contentVersionCommand);
 
-if (!process.argv.includes('--json')) {
+if (!process.argv.includes('--json') && !process.argv.includes('compare')) {
   showBanner();
 }
 program.allowUnknownOption(true);
 for (const command of program.commands) {
-  command.allowUnknownOption(true);
+  command.allowUnknownOption(command.name() !== 'compare');
 }
 program.parse();

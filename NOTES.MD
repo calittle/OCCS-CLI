@@ -1,5 +1,32 @@
 # Notes
 
+## 1.3.0 - 2026-11-04
+
+- Show assigned style class names beside styles in document, layout and content
+  model views, and in style details. Keep repeated attachments of the same style
+  individually selectable so each displays its own class assignments.
+
+- Explain resource comparisons using names, placement and business properties:
+  layout/content moves and inclusion flags, named style attributes, field/data
+  mappings, authored text, conditions and repeated sections. Resolve missing
+  reference names from local cache metadata or read-only live metadata requests.
+- Keep raw UUIDs, API paths and full markup out of the default Markdown report.
+  Retain exact evidence in JSON and an opt-in `--include-technical` appendix.
+  Ignore configuration labels and API wrapper/order noise; use declared resource
+  positions and show lifecycle status without internal links and Config IDs.
+
+- Add `compare <type> <name>` for content, document, package and chart versions,
+  and layout, style and font snapshots from two caches. Compare live versions
+  with a saved session or inspect cached exports offline, including version
+  listing and explicit before/after selection.
+- Generate standardized Markdown reports and versioned JSON results separating
+  functional changes, metadata and missing evidence. Inspect content markup,
+  Comms bindings and binary hashes; preserve duplicate placements and report
+  relationship order changes. Missing artifacts produce an incomplete report
+  and exit status 2 instead of an equivalence claim.
+- Retain expanded package version metadata in exports so offline comparisons
+  can include document associations alongside the Assembly Template.
+
 ## 1.2.8 - 2026-11-03
 
 - Show all retained layouts sharing a grid area in document mockups instead

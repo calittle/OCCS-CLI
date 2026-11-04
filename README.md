@@ -163,6 +163,7 @@ occs graph
 1. `smoke [options]`           Run package preview smoke suite and draft an email report
 1. `convertxml [options]`      Convert XML input files to JSON
 1. `condition-check [options]` Evaluate Assembly Template document conditions against input JSON
+1. `compare <type> <name> [options]` Compare resource versions or two saved resource snapshots
 1. `template-compare [options]` Compare two Assembly Template JSON files semantically
 1. `preflight [options]`       Scan open ConfigIDs for in-flight records
 1. `create-config [options] [shortName]` Create an open ConfigId
@@ -588,6 +589,84 @@ Output includes:
 * Near-miss evidence (partially satisfied candidates) in `pretty` format
 * Full non-triggered conditioned content evidence (no near-miss threshold applied for content)
 * Closest-match analysis with failed checks when no docs trigger
+
+#### compare
+
+Compare versions of **content, documents, packages and charts**, or snapshots of
+**layouts, styles and fonts**. This is a separate resource comparison engine;
+`template-compare` remains the older standalone Assembly Template file command.
+All Comms operations are reads. Comparison never publishes or edits a resource.
+
+```bash
+# Live content versions, including inactive/draft versions exposed by Comms
+occs compare content "BillHeader" --from-version 1.0 --to-version 2.0 --output comparison.md
+
+# List the exact version short names before comparing
+occs compare document "Bill" --list-versions --json
+
+# Offline comparison of two versions in one downloaded cache
+occs compare content "BillHeader" --cache ./output --from-version 1.0 --to-version 2.0
+
+# Two saved resource snapshots (no version flags for an unversioned resource)
+occs compare layout "BillLayout" --from-cache ./baseline --to-cache ./current --output layout-comparison.md
+
+# Versioned resources can also come from separate caches
+occs compare package "Bills" --from-cache ./baseline --to-cache ./current --from-version 1.0 --to-version 2.0 --json
+```
+
+Use `--session <alias>` for a saved Comms connection. `--format md` is the default;
+`--format json` or `--json` produces a structured result and its Markdown report.
+`--output <file>` writes the selected format while retaining the same stdout
+output. Cache operations do not require a saved session or make network requests.
+Versioned resources require explicit before/after version short names; a missing
+or ambiguous version fails rather than silently substituting another version.
+Layout, style and font comparisons require `--from-cache` and `--to-cache`.
+
+The Markdown report leads with named resources and contextual explanations, such
+as a layout moving from position 1 to 3, a field changing from Balance to TotalDue,
+or a named style changing its font family. Placement, style class and area details
+locate the affected item. Unchanged API wrapper fields and configuration labels
+are excluded, and explicit relationship indices determine order rather than the
+order in which the API happens to return rows.
+
+The report consistently includes **Summary**, **Detailed changes**,
+**Metadata changes**, **Completeness and scope**, and **Comparison details**.
+The JSON report identifies its contract as `occs-resource-comparison/v1` and
+contains `result` (`different`, `equivalent`, or `incomplete`), `complete`,
+`summary`, `changes`, `metadataChanges`, source details and `issues`. Additive
+`insights` and `metadataInsights` fields carry the reader-facing explanations;
+`contextWarnings` identifies references whose names could not be resolved.
+
+Raw paths, UUIDs, markup and administrative evidence remain in JSON. Add
+`--include-technical` to append that evidence to Markdown; the default report
+uses readable before/after tables instead. Names come from expanded relationships
+or resource metadata in the selected cache or live connection. Offline comparison
+never contacts Comms for a missing name, and unresolved references are labelled
+explicitly rather than assigned invented names.
+
+Content reports separate authored text, field bindings, conditional content,
+repeated sections, transforms and formatting. The same edit is not repeated as a
+full markup dump and a text/payload dump. Exact markup remains in technical
+evidence. Style association changes identify the style and its configured class. Images,
+fonts and non-UTF-8 bodies are compared by byte length and SHA-256, without a
+visual/pixel interpretation. Packages include their Assembly Template and direct
+document associations. Other types compare their resource definition and direct
+relationships. Referenced resources are not recursively compared; in particular,
+chart series/axis/category definitions are outside the selected chart's scope.
+No report infers historical definitions for unversioned dependencies.
+
+Object key order, `Items` wrappers and CRLF line endings are normalized. Authored
+whitespace remains significant. Owner and relationship UUIDs, transport locations
+and blob IDs do not count as functional changes; referenced resource identities
+and ordering remain significant. Status, Config IDs and audit fields appear in
+the metadata section. Version short names/descriptions are also metadata.
+
+Exit status is **0** for a complete comparison (whether equivalent or different),
+**2** for a report with missing evidence, and **1** for invalid options, lookup or
+other failures. An incomplete comparison never reports equivalence. Existing
+caches may lack inactive versions, expanded content style associations, package
+document associations, or blobs. Refresh the required resources or compare live.
+New package exports retain expanded version metadata for offline comparisons.
 
 #### template-compare
 

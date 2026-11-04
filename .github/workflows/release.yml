@@ -42,6 +42,18 @@ jobs:
       - name: Build distribution ZIP
         run: npm run build:artifact
 
+      - name: Prepare version release notes
+        run: |
+          python3 - <<'PYNOTES'
+          import os
+          from pathlib import Path
+          version = os.environ['TAG'].removeprefix('v')
+          lines = Path('NOTES.MD').read_text().splitlines()
+          start = next(i for i, line in enumerate(lines) if line == '## ' + version or line.startswith('## ' + version + ' - ')) + 1
+          end = next((i for i in range(start, len(lines)) if lines[i].startswith('## ')), len(lines))
+          Path('dist/release-notes.md').write_text('\n'.join(lines[start:end]).strip() + '\n')
+          PYNOTES
+
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -52,6 +64,7 @@ jobs:
                   gh release delete-asset "$TAG" "$asset" --yes
                 done
             gh release upload "$TAG" dist/*.zip --clobber
+            gh release edit "$TAG" --notes-file dist/release-notes.md
           else
-            gh release create "$TAG" dist/*.zip --title "OCCS CLI $TAG" --generate-notes
+            gh release create "$TAG" dist/*.zip --title "OCCS CLI $TAG" --notes-file dist/release-notes.md
           fi

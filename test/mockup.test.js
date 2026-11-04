@@ -26,6 +26,12 @@ test('Content-details back links return through their actual parent objects', as
   writeJson(path.join(cache, 'documents', 'test-document', 'versions', '1.0.json'), {
     CommunicationDocumentConfigRec: { CommunicationDocumentConfigInfo: { ShortName: 'test document' } },
     CommunicationDocumentVersionConfigRec: { CommunicationDocumentVersionConfigInfo: { ShortName: '1.0', Desc: 'Document version description' } },
+    CommunicationDocumentVersionStyles: ['document-class', 'alternate-class', ''].map(className => ({
+      CommunicationStyleConfigRec: { CommunicationStyleConfigInfo: { ShortName: 'Ming' } },
+      CommunicationDocumentVersionConfigCommunicationStyleConfigRelRec: {
+        CommunicationDocumentVersionConfigCommunicationStyleConfigRelInfo: { StyleClassName: className },
+      },
+    })),
     CommunicationDocumentVersionLayouts: [{
       CommunicationDocumentVersionConfigCommunicationLayoutConfigRelRec: {
         CommunicationDocumentVersionConfigCommunicationLayoutConfigRelInfo: { CommunicationLayoutConfigUuid: 'layout-1', LayoutAlwaysTriggerInd: true },
@@ -37,6 +43,12 @@ test('Content-details back links return through their actual parent objects', as
       CommunicationLayoutConfigUuid: 'layout-1',
       CommunicationLayoutConfigInfo: { ShortName: 'parent layout', LayoutType: 'Block' },
     },
+    CommunicationLayoutStyles: [{
+      CommunicationStyleConfigRec: { CommunicationStyleConfigInfo: { ShortName: 'layout style' } },
+      CommunicationLayoutConfigCommunicationStyleConfigRelRec: {
+        CommunicationLayoutConfigCommunicationStyleConfigRelInfo: { StyleClassName: { Items: ['layout-class', '<special>'] } },
+      },
+    }],
     CommunicationLayoutContents: [{
       ShortName: 'parent content',
       CommunicationLayoutConfigCommunicationContentConfigRelRec: {
@@ -89,7 +101,20 @@ test('Content-details back links return through their actual parent objects', as
   document.querySelector('#content-preview-dialog').showModal = function () { this.open = true; };
   assert.equal(dom.window.previewInjected, undefined);
 
+  click(document, '[data-canonical="styles"]');
+  assert.deepEqual([...document.querySelectorAll('#content-detail li')].map(item => item.textContent), [
+    'Ming [document-class]', 'Ming [alternate-class]', 'Ming',
+  ]);
+  assert.equal(document.querySelector('#content-detail li em')?.textContent, 'document-class');
+  click(document, '#content-detail [data-canonical="style"][data-value="1"]');
+  assert.match(document.querySelector('#content-panel')?.textContent, /Style classesalternate-class/);
+
   click(document, '[data-node="layout-0"]');
+  click(document, '[data-canonical="styles"]');
+  assert.equal(document.querySelector('#content-detail li')?.textContent, 'layout style [layout-class, <special>]');
+  assert.equal(document.querySelector('#content-detail li special'), null);
+  click(document, '#content-detail [data-canonical="style"]');
+  assert.match(document.querySelector('#content-panel')?.textContent, /Style classeslayout-class, <special>/);
   assert.equal(document.querySelector('#detail .content-title [data-canonical="copy"]')?.getAttribute('aria-label'), 'Copy layout name');
   assert.equal(document.querySelector('#detail .document-version')?.textContent, 'Ver: 1.0 · Document version description');
   assert.equal(document.querySelector('#detail [data-canonical="version"]'), null);
@@ -111,8 +136,10 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(document.querySelector('#content-detail h3:last-of-type')?.textContent, 'Styles');
   assert.equal(document.querySelector('#content-panel .empty')?.textContent, 'Choose a field or style in Content details');
   assert.equal(document.querySelector('#content-detail [data-canonical="content-style"]')?.textContent, 'content style');
+  assert.equal(document.querySelector('#content-detail [data-canonical="content-style"]')?.parentElement.textContent, 'content style [content-class]');
   click(document, '#content-detail [data-canonical="content-style"]');
   assert.equal(document.querySelector('#content-panel h2')?.textContent, 'content style');
+  assert.match(document.querySelector('#content-panel')?.textContent, /Style classescontent-class/);
   assert.deepEqual([...document.querySelectorAll('#content-panel li')].map(item => item.textContent), ['Color: #123456', 'Font-size: 12px']);
   const previewButton = document.querySelector('#content-detail .content-title [data-canonical="preview"]');
   assert.equal(previewButton?.previousElementSibling?.dataset.canonical, 'copy');
