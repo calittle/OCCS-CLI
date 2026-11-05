@@ -93,6 +93,12 @@ test('Content-details back links return through their actual parent objects', as
     '<p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;isEnglishBill empty false &amp;&amp; &#39;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#39; !&#61; &#39;&#39;&#34;,&#34;Text&#34;:&#34;&lt;comms-data&gt;$Data{&#34;Id&#34;:&#34;parent field&#34;}&lt;/comms-data&gt;&#34;}&lt;/comms-cond&gt;</p>' +
     '<p><strong>&lt;comms-data&gt;$Data {&#34;Id&#34;:&#34;DC14&#34;,&#34;Type&#34;:&#34;Date&#34;,&#34;Format&#34;:&#34;dd-MM-yy&#34;}&lt;/comms-data&gt;</strong></p>' +
     '<p>&lt;comms-cond&gt;$Cond{&#34;Condition&#34;:&#34;GRIDPAGENUMBER ==1 &amp;&amp; parent field empty false&#34;,&#34;Text&#34;:&#34;&lt;comms-data&gt;$Data {&#34;Id&#34;:&#34;parent field&#34;,&#34;Type&#34;:&#34;Text&#34;,&#34;Format&#34;:&#34;plain&#34;}&lt;/comms-data&gt; remainder&#34;}&lt;/comms-cond&gt;</p>');
+  // Bill-stub rich text closes and opens styled spans inside each token,
+  // including between its final brace and the closing comms-cond tag.
+  fs.appendFileSync(path.join(cache, 'contents', 'parent content', 'versions', '1.0', 'content.blob'),
+    '<table><tr><td><span>&lt;comms-cond&gt;$Cond{"Condition": "isEnglishBill empty false", "Text":"</span><span style="font-size:8pt;">Total Amount Due :"}</span><span>&lt;/comms-cond&gt;</span>' +
+    '<span class="Ming">&lt;comms-cond&gt;$Cond{"Condition": "isChineseBill empty false", "Text":"</span><span style="font-size:8pt;"><span class="Ming">應繳總數</span><span class="Arial"> :</span><span class="Ming">"}</span><span>&lt;/comms-cond&gt;</span></td>' +
+    '<td><strong>&lt;comms-cond&gt;$Cond{"Condition":"isEnglishBill empty false &amp;&amp; accountBalances_totAmt &lt;= 0.0","Text":"No Payment Required"}&lt;/comms-cond&gt;</strong></td></tr></table>');
 
   await mockupCommand('test-document', { cache, output });
   const dom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
@@ -150,7 +156,7 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(document.querySelector('#content-preview-title')?.textContent, 'parent content');
   assert.match(document.querySelector('#content-preview-frame')?.srcdoc || '', /<p>Preview sample \$&<\/p>/);
   const previewDocument = new JSDOM(document.querySelector('#content-preview-frame').srcdoc).window.document;
-  assert.deepEqual([...previewDocument.querySelectorAll('table td')].map(cell => cell.textContent), ['parent field', 'Cond']);
+  assert.deepEqual([...previewDocument.querySelectorAll('table td')].map(cell => cell.textContent), ['parent field', 'Cond', 'CondCond', 'Cond']);
   assert.match(previewDocument.querySelector('.preview-token')?.getAttribute('title') || '', /Field: parent field · Type: Decimal · Format: #,##0\.00/);
   const dateChip = previewDocument.querySelector('strong .preview-token');
   assert.equal(dateChip?.textContent, 'DC14');
@@ -162,7 +168,7 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(conditionalChip?.getAttribute('href'), '#preview-condition-1');
   assert.equal(conditionalChip?.getAttribute('aria-label'), 'Show conditional details');
   assert.equal(previewDocument.querySelector('#preview-condition-1')?.textContent, 'Cond 1Condition: showAmountText: Total');
-  assert.equal(previewDocument.querySelectorAll('.preview-conditional').length, 5);
+  assert.equal(previewDocument.querySelectorAll('.preview-conditional').length, 8);
   assert.equal(previewDocument.querySelectorAll('.preview-conditional')[1]?.getAttribute('href'), '#preview-condition-2');
   assert.equal(previewDocument.querySelector('#preview-condition-2')?.textContent, 'Cond 2Condition: use childContent: child content');
   assert.equal(previewDocument.querySelectorAll('.preview-conditional')[2]?.getAttribute('title'), 'Select to view conditional details');
@@ -171,6 +177,10 @@ test('Content-details back links return through their actual parent objects', as
   assert.match(previewDocument.querySelector('#preview-condition-4')?.textContent || '', /Condition: isEnglishBill empty false && '\[parent field\]' != ''/);
   assert.match(previewDocument.querySelector('#preview-condition-4')?.textContent || '', /Text: \[parent field\]/);
   assert.equal(previewDocument.querySelector('#preview-condition-5')?.textContent, 'Cond 5Condition: GRIDPAGENUMBER ==1 && parent field empty falseText: [parent field · Type: Text · Format: plain] remainder');
+  assert.equal(previewDocument.querySelector('#preview-condition-6')?.textContent, 'Cond 6Condition: isEnglishBill empty falseText: Total Amount Due :');
+  assert.equal(previewDocument.querySelector('#preview-condition-7')?.textContent, 'Cond 7Condition: isChineseBill empty falseText: 應繳總數 :');
+  assert.equal(previewDocument.querySelector('#preview-condition-8')?.textContent, 'Cond 8Condition: isEnglishBill empty false && accountBalances_totAmt <= 0.0Text: No Payment Required');
+  assert.doesNotMatch(previewDocument.querySelector('.preview-conditions')?.textContent || '', /<\/?(?:span|comms-cond)|\$Cond\{/);
   assert.doesNotMatch(previewDocument.body.textContent, /No condition or content was recorded/);
   assert.match(previewDocument.querySelector('style')?.textContent || '', /\.preview-condition-detail\.selected\{display:block/);
   assert.equal(previewDocument.body.lastElementChild?.className, 'preview-conditions');
