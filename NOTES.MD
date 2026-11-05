@@ -1,5 +1,11 @@
 # Notes
 
+## 1.3.1 - 2026-11-05
+
+- Fix document model previews for conditional content split across styled text
+  spans. Keep adjacent conditions separate and show their text and expressions
+  correctly, including Chinese text and embedded field references.
+
 ## 1.3.0 - 2026-11-04
 
 - Show assigned style class names beside styles in document, layout and content
