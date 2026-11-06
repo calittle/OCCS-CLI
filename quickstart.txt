@@ -1,65 +1,62 @@
-OCCS CLI 1.1.0 Local Install Notes
-==================================
-This file is for installing Node.js/npm and the local OCCS CLI tarball:
-  occs-cli-1.1.0.tgz
-Node.js includes npm, so install Node.js first, then install the tarball with npm.
-macOS
+OCCS CLI quick start
+====================
+
+Standalone installation
+-----------------------
+Install Node.js/npm, download the current OCCS CLI release ZIP and extract it.
+Open a terminal in the extracted folder containing package.json, then run:
+
+  npm install
+  npm link
+  occs --version
+  occs --help
+
+See README.md for operating-system prerequisites and installation details.
+Native ATool bundles already contain Node.js, OCCS CLI and npm dependencies;
+skip standalone installation when using that bundled runtime. A custom ATool
+CLI Path overrides its bundle, and installed bundles do not update themselves.
+
+Browser SSO (OCCS CLI 1.4.0 or later)
+------------------------------------
+Install Chrome, Edge or Chromium separately, then run:
+
+  occs login --sso --customer CUSTOMER --region REGION --tenancy non-prod --session sso
+
+Complete the browser login, including QR code and phone/passkey approval.
+The CLI closes the browser, verifies API access, and saves encrypted Comms
+session cookies. A HAR file is not needed. Select a browser with
+--browser-executable PATH or OCCS_SSO_BROWSER when automatic detection fails.
+The sign-in timeout is five minutes; --sso-timeout accepts milliseconds.
+
+Read and preview using the saved alias:
+
+  occs list-configs --session sso --json
+  occs preview --session sso --package MY_PACKAGE --input ./input.json --render-type PDF --output ./preview.pdf
+
+Use a known working package/input pair. To sign in again after expiry:
+
+  occs login --sso --session sso
+
+Commands do not open the browser or repeat SSO login automatically. Other
+commands reuse the saved current session when no explicit selector is supplied.
+
+Password login remains available:
+
+  occs login --username USERNAME --customer CUSTOMER --region REGION --tenancy non-prod --session password-session
+
+Enter the password when prompted or supply existing environment defaults.
+Oracle-hosted XML conversion requires a password session. SSO preview can use
+JSON or local --xsd XML conversion. Migration from an SSO source requires an
+explicit source bearer token; its session cookies are not a replacement.
+
+ATool
 -----
-1. Install Node.js and npm.
-   Recommended with Homebrew:
-     brew install node
-   If Homebrew is not installed, download the macOS installer from:
-     https://nodejs.org/
-2. Open a new Terminal window and verify Node.js/npm.
-     node -v
-     npm -v
-3. Copy occs-cli-1.1.0.tgz to a local folder, such as Downloads.
-4. Install OCCS CLI globally.
-     cd ~/Downloads
-     npm install -g ./occs-cli-1.1.0.tgz
-5. Verify the OCCS command is available.
-     occs --version
-     occs --help
-Windows
--------
-1. Install Node.js and npm.
-   Download and run the Windows LTS installer from:
-     https://nodejs.org/
-   Keep the default installer options, including adding Node.js to PATH.
-2. Open a new PowerShell window and verify Node.js/npm.
-     node -v
-     npm -v
-3. Copy occs-cli-1.1.0.tgz to a local folder, such as Downloads.
-4. Install OCCS CLI globally.
-     cd $env:USERPROFILE\Downloads
-     npm install -g .\occs-cli-1.1.0.tgz
-5. Verify the OCCS command is available.
-     occs --version
-     occs --help
-Updating or reinstalling
-------------------------
-If an older copy is already installed, uninstall it first:
-  npm uninstall -g occs-cli
-Then install the local tarball again:
-  npm install -g ./occs-cli-1.1.0.tgz
-On Windows, use:
-  npm install -g .\occs-cli-1.1.0.tgz
-Optional Graphviz install
--------------------------
-Graphviz is only needed for OCCS CLI commands that generate graph output.
-macOS:
-  brew install graphviz
-Windows:
-  winget install Graphviz.Graphviz
-After installing Graphviz, open a new terminal and verify:
-  dot -V
-Troubleshooting
----------------
-If "npm" is not recognized, Node.js is not installed correctly or the terminal was
-opened before installation finished. Close the terminal, open a new one, and try:
-  node -v
-  npm -v
-If "occs" is not recognized after installation, close and reopen the terminal.
-If it still fails, check the npm global install location:
-  npm config get prefix
-Make sure the matching npm global bin folder is on PATH.
+The updated Qt source exposes Settings -> Sign In to Comms (SSO)... and uses
+the selected alias for normal Comms operations. Both the updated ATool UI and
+OCCS CLI 1.4.0+ are required. Updating only the CLI does not add the action to
+an older app. ATool's real phone/browser sign-in still needs live validation;
+the CLI login, reads, ConfigId creation and PDF preview have been verified.
+See README.md and the ATool user guide for remaining limitations.
+
+Keep ~/.occs-session.json and ~/.occs-cli/credential-key private. Do not place
+HAR files, session cookies, keys or customer inputs in source control.

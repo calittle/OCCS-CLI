@@ -187,11 +187,11 @@ General parameters applicable to most commands:
 #### login
 Log in to Oracle CCS and store the session.
 
-`occs-cli login -u USERNAME -p PASSWORD --customer CUSTOMER --region REGION --tenancy TENANCY`
+`occs login --username USERNAME --customer CUSTOMER --region REGION --tenancy TENANCY`
 
 You can also run `occs login` with no flags and enter required values interactively.
 Each successful login saves a session keyed by `customer.region/tenancy` and makes it current. Use `--session <name>` to add an alias.
-Login credentials are saved encrypted for commands that must refresh Oracle tokens, such as XML conversion and XML preview. The session file stores only encrypted password material; the local encryption key is created at `~/.occs-cli/credential-key`.
+Password login saves encrypted credentials for token refresh, including Oracle-hosted XML conversion. Browser SSO saves encrypted Comms session cookies instead. Both use the local key at `~/.occs-cli/credential-key`; saved sessions are in `~/.occs-session.json`. The password is prompted interactively when it is not supplied through environment defaults or flags.
 
 `login` can read defaults from a local `.env` file and skip prompts for values found there:
 * `OCCS_USERNAME`
@@ -267,6 +267,31 @@ verification in your Comms environment. Oracle-hosted XML conversion is
 not enabled for SSO: use `--xsd` or a password session. Migration can use SSO for
 the target, but an SSO source requires an explicit `--source-token`; its cookies
 cannot replace the bearer token required by the movement API.
+
+##### SSO preview and ATool
+
+After signing in, use the alias explicitly for reads and PDF preview:
+
+```sh
+occs list-configs --session sso --json
+occs preview --session sso --package MY_PACKAGE --input ./data/input.json --render-type PDF --output ./output/sso-preview.pdf
+```
+
+Use a known working package/input pair. For XML input with SSO, provide
+`--xsd ./schemas/bill-print.xsd` for local conversion. An empty test ConfigId
+is not a valid closure test: Comms can reject it with "There is no domain
+associated, so cannot close the configuration." That response does not itself
+indicate an authentication failure.
+
+ATool can reuse a saved SSO alias when configured to run this CLI version.
+The updated ATool Qt source also provides **Settings → Sign In to Comms (SSO)…**;
+that UI needs an ATool build containing the change and OCCS CLI 1.4.0 or later.
+Updating the CLI alone does not add the menu action to an older ATool app.
+See the [ATool SSO instructions](https://github.com/calittle/ATool#browser-sso-sign-in).
+ATool's new UI has automated coverage; its full browser/phone sign-in still
+needs live validation. The CLI's login, session reuse, reads, ConfigId creation
+and JSON-to-PDF preview have been verified live. Session expiry/renewal and
+other write operations have automated coverage but still need live validation.
 
 #### sessions
 
@@ -423,6 +448,10 @@ Use `--dry-run` to resolve the ConfigId without changing it:
 
 `occs close-config build-01 --session non-prod --dry-run`
 
+Comms rejects closing an empty ConfigId with no associated domain. Use a
+configuration containing the intended release changes; creating and immediately
+closing an empty test ConfigId is not a valid close test.
+
 #### migrate
 
 Initiates ConfigId movement from a source environment to a target environment. The command refreshes a source access token from saved source credentials when available, asks the target environment for the eligible movement list, and then calls the target movement endpoint.
@@ -439,6 +468,12 @@ Use `--dry-run` to fetch and validate the eligible list without initiating movem
 
 `occs migrate --source-session non-prod --target-tenancy pre-prod --dry-run`
 
+An SSO target session is supported. For an SSO source, supply a separately
+obtained source bearer token with `--source-token`; session cookies cannot be
+substituted for that token. `--use-stored-source-token` does not convert SSO
+cookies into a token. Without an explicit source token, use a password-authenticated
+source session.
+
 #### convertxml
 
 Convert XML input to JSON without rendering a preview. By default this uses Oracle CCS; pass `--xsd` to convert locally from a schema instead.
@@ -451,7 +486,7 @@ For XML batches with multiple `<C1-BillPrintRecord>` or `<billPrint>` elements, 
 
 Before contacting Oracle, OCCS CLI checks that each XML input is well-formed and reports the local parser error (including its line and column when available).
 
-By default, converted JSON is rerooted to `billPrint`, matching XML preview behavior. Oracle conversion requires credentials from encrypted saved login credentials, env, or flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`). Local `--xsd` conversion does not require Oracle credentials.
+By default, converted JSON is rerooted to `billPrint`, matching XML preview behavior. Oracle conversion requires credentials from encrypted saved login credentials, env, or flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`). Local `--xsd` conversion does not require an Oracle session. Oracle-hosted XML conversion is not enabled for SSO sessions; select a password session for that path.
 
 Optional parameters:
 * `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
@@ -486,10 +521,10 @@ If the input is XML (`.xml` or file starts with `<`), `preview` will:
 * Auto-detect multi-transaction batches (multiple `<C1-BillPrintRecord>` or `<billPrint>` elements), preview each transaction, and suffix output filenames by `billId` when available
 * Call `CommunicationFileTransfer/v1/XmlToJsonConverter`, or convert locally when `--xsd` is supplied
 * Reroot the converted JSON to `billPrint` by default before preview submission
-* Re-login (converter invalidates token)
+* Re-login after Oracle-hosted conversion (the converter invalidates the token); local `--xsd` conversion skips this step
 * Submit converted JSON to `CommunicationAssembly/v1/CommunicationAssemblyRec`
 
-For XML preview, credentials must be available from encrypted saved login credentials, env, or flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`).
+JSON preview and XML preview with local `--xsd` conversion can use a saved SSO session. Oracle-hosted XML conversion requires password credentials from the saved session, environment, or flags (`OCCS_USERNAME` and password via `OCCS_PASSWORD` or `OCCS_PASSWORD_ENC` + `OCCS_PASSWORD_KEY`); that conversion path is not enabled for SSO.
 
 Optional parameters:
 * `--session <name>`: Use a saved session alias or full session key (`customer.region/tenancy`) instead of the current session.
@@ -504,7 +539,7 @@ Optional parameters:
 * `-o, --output <path>`: Output file path (or directory). Defaults to the current working directory using the input filename stem plus extension based on render type. When `--input` is a folder, `--output` must be a directory path and output filenames mirror the input folder structure.
 * `--env-file <path>`: Optional env file path for credential defaults.
 * `--extract <expr>`: For batch XML input, extract a single record by expression (supports `field=value` or `field==value`), e.g. `billId=002051606115`.
-* `--xsd <path>`: For XML input, convert locally using this XSD instead of the Oracle XML conversion API. Preview still requires a valid saved access token or credentials to submit the rendered request.
+* `--xsd <path>`: For XML input, convert locally using this XSD instead of the Oracle XML conversion API. Preview still requires a valid saved SSO cookie session, access token, or password credentials to submit the rendered request.
 * `--reroot <newRoot>`: For XML input, reroot converted JSON to the specified element before preview submission. By default, the converter automatically chooses `billPrint` or `statementPrint` from the XML document.
 * `--disable-reroot`: For XML input, disable converted JSON rerooting entirely (overrides the default `billPrint` reroot).
 

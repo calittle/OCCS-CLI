@@ -51,6 +51,22 @@ The compare mode is particularly useful immediately after Non-Production to Pre-
    occs login -c examplecustomer -r example-region -t <target-tenancy>
    ```
 
+   For SSO, use OCCS CLI 1.4.0 or later and an installed Chrome, Edge or
+   Chromium. Add `--sso` and a session alias for each environment, for example:
+
+   ```sh
+   occs login --sso -c examplecustomer -r example-region -t non-prod --session np
+   occs login --sso -c examplecustomer -r example-region -t pre-prod --session pp
+   ```
+
+   Complete browser/phone approval for each login. When a session expires, run
+   `occs login --sso --session np` (or the target alias) and retry. For smoke
+   suites using SSO, convert XML locally to JSON first (for example with
+   `occs convertxml --xsd ./schema.xsd --input ./input.xml --output ./input.json`).
+   Oracle-hosted XML conversion needs a password session. Migration from an SSO
+   source additionally requires an explicit source bearer token when using the CLI. ATool's migration
+   UI requires a password-authenticated source alias; the target can use SSO.
+
 3. Keep a small, representative set of JSON or XML inputs. Each input should represent a meaningful communication path, rather than every possible scenario.
 4. Confirm the communication package short name for each input.
 5. Install the local PDF utilities used by the smoke command: Poppler (`pdftoppm` and `pdfinfo`) is required for thumbnails and PDF page counts. For two-environment visual comparison, also install ImageMagick (`identify` and `compare`). Ensure these commands are on `PATH` before running the suite.
@@ -198,6 +214,14 @@ Use ATool where a reviewer needs to see and understand a communication. Use OCCS
 
 In ATool **User Settings**, set the OCCS session alias used for normal package and preview work. Set the **Config Source** and **Config Target** session aliases for movement activities, for example `np` and `pp`. If your organisation uses a naming convention for release Config IDs, add a Config ID Filter so the publish and close dialogues only offer the intended IDs.
 
+In the updated ATool Qt application, **Settings → Sign In to Comms (SSO)…**
+opens browser sign-in and selects the successful alias for normal Comms work.
+This requires both an ATool build containing the new action and OCCS CLI 1.4.0
+or later. Older apps can reuse an externally created SSO session with the updated
+CLI, but do not gain the sign-in action by updating the CLI alone. Expired SSO
+sessions direct users to sign in again; the operation is not automatically replayed.
+The new ATool sign-in UI still needs live validation.
+
 The relevant ATool menu flows are:
 
 - **Package → Preview…** — render and visually inspect a selected communication package and input.
@@ -210,6 +234,10 @@ After a successful closure, ATool offers to begin migration. Treat that prompt a
 ### Closure procedure
 
 Before closing a Config ID, make sure the intended package, document, layout, content, style, and font changes are saved under the same Config ID. Use ATool’s package/publish workflow to inspect and publish the package changes; use ATool preview to confirm the selected representative inputs still assemble correctly.
+
+An empty ConfigId with no associated domain cannot be closed. Its validation
+error is not evidence that SSO authentication failed; use the intended release
+configuration containing the authored changes.
 
 Then perform a fresh source-tenancy smoke run and retain its artifacts. This is the last easy opportunity to prove that the configuration behaves as expected before it is frozen for movement.
 
@@ -241,7 +269,7 @@ Configuration Movement is initiated from the **target** tenancy. For a Non-Produ
 
 **Using ATool**
 
-1. Verify the source and target session aliases in User Settings.
+1. Verify the source and target session aliases in User Settings. The source must use password authentication in ATool; the target may use SSO.
 2. Choose **Config → Migrate**.
 3. Review the selected source/target and eligible release scope.
 4. Initiate movement only after the source smoke run is approved.
