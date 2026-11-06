@@ -461,6 +461,9 @@ program
 program
   .command('login')
   .description('Log in to Oracle CCS and store session')
+  .option('--sso', 'Sign in through a browser using SSO and phone/passkey approval')
+  .option('--browser-executable <path>', 'Chrome, Edge, or Chromium executable for SSO')
+  .option('--sso-timeout <ms>', 'Time allowed for interactive SSO sign-in in milliseconds', '300000')
   .option('--env-file <path>', 'Path to .env file for login defaults')
   .option('-u, --username <username>', 'Username')
   .option('-p, --password <password>', 'Password')

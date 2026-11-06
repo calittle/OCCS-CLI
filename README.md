@@ -222,6 +222,52 @@ Encrypted env password values use format `v1:<ivBase64>:<tagBase64>:<ciphertextB
 Unsure what to use? Look at the URL used to access CCS:
 `https://[customer].[region].oraclecloud.com/[tenancy]/ui/Configuration/index.html`
 
+##### Browser SSO login
+
+For federated sign-in, including QR code and phone/passkey approval:
+
+```sh
+occs login --sso --customer examplecustomer --region example-region --tenancy non-prod --session sso
+occs list-contents
+```
+
+The login opens a separate Chrome, Edge, or Chromium window. Complete your normal
+SSO approval there. OCCS closes the browser and verifies both user information and
+content-list access using the resulting Comms cookies before saving the session.
+The browser must be installed separately. Set `--browser-executable <path>` or
+`OCCS_SSO_BROWSER` if automatic detection does not find it. The sign-in timeout is
+five minutes; change it with `--sso-timeout <milliseconds>`. API request timeouts
+remain controlled by `--timeout`.
+
+SSO uses the same customer, region, tenancy, alias, and current-session selection
+as password login. An existing alias can supply the target for reauthentication:
+
+```sh
+occs login --sso --session sso
+```
+
+SSO does not require or decrypt password defaults. Comms session cookies are
+encrypted in `~/.occs-session.json` using the local credential key, and updated
+when the service renews them. The CLI retains Comms cookies only, not Microsoft
+identity-provider cookies or your personal browser profile. Treat the session
+file and credential key as private. A HAR file is not needed for normal login.
+`occs sessions` displays the authentication method without displaying cookies.
+Logging into the same target with another method replaces its previous
+authentication material.
+
+When SSO expires, commands stop and show a browser login command to run. They do
+not open a browser automatically or retry SSO authentication. A `403` remains a
+permission/CSRF error rather than triggering repeated password login attempts.
+
+Cookie authentication is connected to reads, downloads, authoring requests,
+package operations, JSON preview, and preview after local `--xsd` conversion.
+Live validation confirmed login, saved-session reuse, reads, ConfigId creation,
+and PDF preview. Other writes/CSRF and session expiry/renewal still need
+verification in your Comms environment. Oracle-hosted XML conversion is
+not enabled for SSO: use `--xsd` or a password session. Migration can use SSO for
+the target, but an SSO source requires an explicit `--source-token`; its cookies
+cannot replace the bearer token required by the movement API.
+
 #### sessions
 
 List saved OCCS sessions and show which one is current.

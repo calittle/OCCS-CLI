@@ -1,5 +1,25 @@
 # Notes
 
+## 1.4.0 - 2026-11-06
+
+- Add browser SSO login with `occs login --sso`, including federated sign-in
+  and phone/passkey approval. Support browser selection and a separate sign-in
+  timeout, and verify Comms API access after closing the browser before saving.
+- Encrypt saved Comms session cookies and reuse them across commands. Apply
+  service cookie updates, isolate sessions by target, and serialize session-file
+  updates across concurrent CLI processes. Show each saved session's login method.
+- Connect SSO to reads, downloads, authoring requests, package operations, JSON
+  preview and preview after local XSD conversion. Live validation confirmed
+  login, saved-session reuse, reads, ConfigId creation and PDF preview.
+- Detect expired SSO sessions and request browser sign-in again instead of
+  attempting password refresh. Preserve permission errors and display sanitized
+  server validation messages without exposing request credentials. Redact
+  session identifiers from HTTP diagnostics.
+- Keep password login compatible. Oracle-hosted XML conversion still requires
+  a password session; migration from an SSO source requires an explicit source
+  bearer token. Other writes and session expiry/renewal need further live
+  validation. ATool login integration is a separate change.
+
 ## 1.3.1 - 2026-11-05
 
 - Fix document model previews for conditional content split across styled text
