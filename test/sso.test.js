@@ -263,7 +263,7 @@ test('closing the login window cleans up without saving or sending standalone AP
     }),
     request: () => assert.fail('must not request'),
     save: () => assert.fail('must not save'),
-  }), /cancelled or timed out/);
+  }), /browser closed or disconnected/);
   assert.equal(closed, true);
 });
 
@@ -330,4 +330,53 @@ test('migration rejects an SSO source before sending requests without an explici
   assert.equal(run.status, 1);
   assert.match(run.stdout, /explicit --source-token/);
   assert.doesNotMatch(run.stdout + run.stderr, /must not send/);
+});
+
+
+test('browser closure races produce a useful error and preserve diagnostics without saving', async () => {
+  for (const stage of ['launch', 'context', 'page', 'cookies', 'export', 'dispose']) {
+    let reads = 0;
+    let cleanups = 0;
+    const closed = new Error('browserContext.cookies: Target page, context or browser has been closed\nBrowser logs: synthetic crash');
+    const fail = async at => { if (stage === at) throw closed; };
+    const browser = {
+      isConnected: () => true,
+      close: async () => { cleanups++; throw new Error('Browser has been closed'); },
+      newContext: async () => {
+        await fail('context');
+        return {
+          newPage: async () => { await fail('page'); return { goto: async () => {}, isClosed: () => false }; },
+          cookies: async () => {
+            await fail(++reads === 1 ? 'cookies' : 'export');
+            return [{ name: 'ORA_OCIS_CG_SESSION_test', value: 'synthetic', domain: 'example.region.oraclecloud.com', path: '/' }];
+          },
+          request: { get: async () => ({ status: () => 200,
+            json: async () => ({ idcs_authn_method: 'oauth', idcs_session_id: 'test' }),
+            dispose: async () => fail('dispose') }) },
+        };
+      },
+    };
+    await assert.rejects(loginSso({ customer: 'example', region: 'region', tenancy: 'non-prod' }, {
+      launch: async () => { await fail('launch'); return browser; },
+      request: () => assert.fail('must not request'),
+      save: () => assert.fail('must not save'),
+    }), error => {
+      assert.equal(error.code, 'OCCS_SSO_BROWSER_CLOSED', stage);
+      assert.match(error.message, /keep the browser open/);
+      assert.equal(error.cause, closed);
+      return true;
+    });
+    assert.equal(cleanups, stage === 'launch' ? 0 : 1);
+  }
+});
+
+test('browser cleanup failure does not hide the original sign-in failure', async () => {
+  const original = new Error('context setup failed');
+  await assert.rejects(loginSso({ customer: 'example', region: 'region', tenancy: 'non-prod' }, {
+    launch: async () => ({ isConnected: () => true,
+      newContext: async () => { throw original; },
+      close: async () => { throw new Error('cleanup failed'); },
+    }),
+    save: () => assert.fail('must not save'),
+  }), error => error === original);
 });

@@ -1,5 +1,16 @@
 # Notes
 
+## 1.4.1 - 2026-11-10
+
+- Handle sign-in browser closure or disconnection during startup, cookie reads
+  and cookie export with clear retry guidance. Retain the original browser
+  diagnostics to help investigate failures.
+- Preserve the original sign-in error if browser cleanup also fails. Do not
+  save an incomplete session or continue to standalone API validation after
+  sign-in fails. Distinguish a closed browser from a sign-in timeout.
+- These error-handling changes do not resolve the trusted-workstation Microsoft
+  SSO handoff; that path still needs investigation.
+
 ## 1.4.0 - 2026-11-06
 
 - Add browser SSO login with `occs login --sso`, including federated sign-in
