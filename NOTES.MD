@@ -1,5 +1,13 @@
 # Notes
 
+## 1.4.2 - 2026-11-16
+
+- Extract the single enclosing statement record when selecting a Bill ID in a
+  statement XML batch. Previously selection could return the entire batch and
+  produce extra JSON wrappers. Use the same record detection for selected-ID
+  conversion and whole-batch conversion, including XML preview. Reject missing
+  or ambiguous matches.
+
 ## 1.4.1 - 2026-11-10
 
 - Handle sign-in browser closure or disconnection during startup, cookie reads
