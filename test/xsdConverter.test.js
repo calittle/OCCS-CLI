@@ -76,3 +76,50 @@ test('convertxml automatically reroots statement XML to statementPrint', () => {
   });
   fs.rmSync(directory, { recursive: true, force: true });
 });
+
+
+for (const recordTag of ['CM-StatementPrintRecord', 'C1-BillPrintRecord', 'statementPrint', 'billPrint']) {
+  test(`convertxml extracts one ${recordTag} record by bill ID`, (t) => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'occs-extract-xsd-'));
+    t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+    const schemaPath = path.join(directory, 'record.xsd');
+    const xmlPath = path.join(directory, 'batch.xml');
+    const jsonPath = path.join(directory, 'selected.json');
+    const rootName = recordTag.includes('Statement') || recordTag === 'statementPrint' ? 'statementPrint' : 'billPrint';
+    const record = (id) => {
+      const contents = `<billId>${id}</billId><accountId>account-${id}</accountId>`;
+      return recordTag === rootName
+        ? `<${recordTag}>${contents}</${recordTag}>`
+        : `<${recordTag}><${rootName}>${contents}</${rootName}></${recordTag}>`;
+    };
+    const fields = '<xs:complexType><xs:sequence><xs:element name="billId" type="xs:string"/><xs:element name="accountId" type="xs:string"/></xs:sequence></xs:complexType>';
+    const declaration = recordTag === rootName ? fields
+      : `<xs:complexType><xs:sequence><xs:element name="${rootName}">${fields}</xs:element></xs:sequence></xs:complexType>`;
+    fs.writeFileSync(schemaPath, `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="${recordTag}">${declaration}</xs:element></xs:schema>`);
+    const run = (id) => execFileSync(process.execPath, [
+      'bin/occs.js', 'convertxml', '-i', xmlPath, '-o', jsonPath,
+      '--extract', `billId=${id}`, '--xsd', schemaPath,
+    ], { cwd: path.resolve(import.meta.dirname, '..'), stdio: 'pipe' });
+
+    fs.writeFileSync(xmlPath, `<root>${record('001')}${record('002')}${record('003')}</root>`);
+    run('002');
+    assert.deepEqual(JSON.parse(fs.readFileSync(jsonPath, 'utf8')), {
+      [rootName]: { billId: '002', accountId: 'account-002' },
+    });
+    assert.deepEqual(fs.readdirSync(directory).filter((name) => name.endsWith('.json')), ['selected.json']);
+
+    fs.unlinkSync(jsonPath);
+    assert.throws(() => run('missing'), (error) => {
+      assert.match(String(error.stderr), /No XML record matched/);
+      return true;
+    });
+    assert.equal(fs.existsSync(jsonPath), false);
+
+    fs.writeFileSync(xmlPath, `<root>${record('002')}${record('002')}</root>`);
+    assert.throws(() => run('002'), (error) => {
+      assert.match(String(error.stderr), /Multiple XML records matched/);
+      return true;
+    });
+    assert.equal(fs.existsSync(jsonPath), false);
+  });
+}
