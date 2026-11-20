@@ -98,7 +98,10 @@ test('Content-details back links return through their actual parent objects', as
   fs.appendFileSync(path.join(cache, 'contents', 'parent content', 'versions', '1.0', 'content.blob'),
     '<table><tr><td><span>&lt;comms-cond&gt;$Cond{"Condition": "isEnglishBill empty false", "Text":"</span><span style="font-size:8pt;">Total Amount Due :"}</span><span>&lt;/comms-cond&gt;</span>' +
     '<span class="Ming">&lt;comms-cond&gt;$Cond{"Condition": "isChineseBill empty false", "Text":"</span><span style="font-size:8pt;"><span class="Ming">應繳總數</span><span class="Arial"> :</span><span class="Ming">"}</span><span>&lt;/comms-cond&gt;</span></td>' +
-    '<td><strong>&lt;comms-cond&gt;$Cond{"Condition":"isEnglishBill empty false &amp;&amp; accountBalances_totAmt &lt;= 0.0","Text":"No Payment Required"}&lt;/comms-cond&gt;</strong></td></tr></table>');
+    '<td><strong>&lt;comms-cond&gt;$Cond{"Condition":"isEnglishBill empty false &amp;&amp; accountBalances_totAmt &lt;= 0.0","Text":"No Payment Required"}&lt;/comms-cond&gt;</strong></td></tr></table>' +
+    '<p>&lt;comms-cond&gt;$Cond{"Condition":"literal &amp;lt; &#38;gt; &#x26;quot; &amp;nbsp;","Text":"&#x1f600; &#1114112; &#38;lt;"}&lt;/comms-cond&gt;</p>' +
+    '<p>&lt;comms-cond&gt;$Cond{"Condition":"<scr<script>ipt>safe</scr</script>ipt>","Text":"nested markup"}&lt;/comms-cond&gt;</p>' +
+    '<p>&lt;comms-cond&gt;$Cond{"Condition":"amount < 10 && amount > 0","Text":"Range"}&lt;/comms-cond&gt;</p>');
 
   await mockupCommand('test-document', { cache, output });
   const dom = new JSDOM(fs.readFileSync(output, 'utf8'), { runScripts: 'dangerously' });
@@ -168,7 +171,10 @@ test('Content-details back links return through their actual parent objects', as
   assert.equal(conditionalChip?.getAttribute('href'), '#preview-condition-1');
   assert.equal(conditionalChip?.getAttribute('aria-label'), 'Show conditional details');
   assert.equal(previewDocument.querySelector('#preview-condition-1')?.textContent, 'Cond 1Condition: showAmountText: Total');
-  assert.equal(previewDocument.querySelectorAll('.preview-conditional').length, 8);
+  assert.equal(previewDocument.querySelectorAll('.preview-conditional').length, 11);
+  assert.equal(previewDocument.querySelector('#preview-condition-9')?.textContent, 'Cond 9Condition: literal &lt; &gt; &quot; &nbsp;Text: 😀 &#1114112; &lt;');
+  assert.equal(previewDocument.querySelector('#preview-condition-10')?.textContent, 'Cond 10Condition: safeText: nested markup');
+  assert.equal(previewDocument.querySelector('#preview-condition-11')?.textContent, 'Cond 11Condition: amount < 10 && amount > 0Text: Range');
   assert.equal(previewDocument.querySelectorAll('.preview-conditional')[1]?.getAttribute('href'), '#preview-condition-2');
   assert.equal(previewDocument.querySelector('#preview-condition-2')?.textContent, 'Cond 2Condition: use childContent: child content');
   assert.equal(previewDocument.querySelectorAll('.preview-conditional')[2]?.getAttribute('title'), 'Select to view conditional details');
