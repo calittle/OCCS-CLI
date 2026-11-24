@@ -1,5 +1,18 @@
 # Notes
 
+## 1.4.3 - 2026-11-24
+
+- Keep the explicitly selected session for package list, get and save commands.
+  Previously these commands could fall back to the current CLI session, making
+  an open ConfigId appear missing during publishing or reading packages from
+  another environment. Both publish dry runs and uploads use the selected session.
+- Preserve literal HTML entity names in content parsing and model previews by
+  decoding one entity layer. Remove nested markup consistently from conditional
+  text and Oracle error messages. Use fixed password-source labels in preview
+  and XML conversion diagnostics rather than logging credential metadata.
+- Update locked dependencies, including axios 1.13.6 to 1.20.0, jsonpath-plus
+  10.2.0 to 10.3.0, and source-map-js 1.2.1 to 1.2.4.
+
 ## 1.4.2 - 2026-11-16
 
 - Extract the single enclosing statement record when selecting a Bill ID in a
