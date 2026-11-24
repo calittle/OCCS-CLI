@@ -239,6 +239,8 @@ program
 program
   .command('preflight')
   .description('Scan open ConfigIDs for in-flight records')
+  .option('--session <name>', 'Saved session alias or key to inspect')
+  .option('--json', 'Write the complete preflight report as JSON to stdout')
   .option('-c, --config-id <id>', 'Only scan a single ConfigID from the open configuration list')
   .option('--list-attached', 'List attached package/document/content items for each scanned ConfigID')
   .option('--show-blockers', 'Show package->document blocker chains, including owner config details when available')

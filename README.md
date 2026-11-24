@@ -410,6 +410,12 @@ block a document change across ConfigIDs:
 
 `occs-cli preflight --config-id <CONFIG_ID> --deep`
 
+Use an explicit saved environment and a machine-readable report:
+
+`occs-cli preflight --session np --config-id <CONFIG_ID> --list-attached --deep --json`
+
+JSON output includes the selected session, attached objects, registry changes (including standalone fonts and styles), and dependency chains. It contains no progress messages, even with `--verbose`.
+
 `--deep` includes the normal attached-item inventory, every resolvable
 package-to-document-to-layout association with each item's owning ConfigID,
 and the complete Configuration Domain Registry. The registry output lists every
